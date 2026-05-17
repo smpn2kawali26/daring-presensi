@@ -16,13 +16,11 @@ body {
     margin: 0 auto;
 }
 
-/* Header */
 .header {
     background: white;
     border-radius: 24px;
     padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     text-align: center;
 }
 
@@ -32,20 +30,17 @@ body {
     justify-content: center;
     gap: 12px;
     margin-bottom: 12px;
-    flex-wrap: wrap;
 }
 
 .logo-img {
     width: 60px;
     height: 60px;
     object-fit: contain;
-    border-radius: 12px;
 }
 
 .school-info h1 {
     color: #2d3748;
     font-size: 20px;
-    margin-bottom: 4px;
 }
 
 .school-info p {
@@ -62,7 +57,6 @@ body {
 
 .date {
     font-size: 14px;
-    font-weight: 600;
     color: #2d3748;
 }
 
@@ -70,16 +64,30 @@ body {
     font-size: 24px;
     font-weight: 700;
     color: #667eea;
-    font-family: monospace;
 }
 
-/* Card */
+.jam-status {
+    font-size: 12px;
+    margin-top: 5px;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.jam-status.open {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.jam-status.closed {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
 .card {
     background: white;
     border-radius: 24px;
     padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
 .card-title {
@@ -87,12 +95,8 @@ body {
     font-weight: 700;
     color: #2d3748;
     margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
-/* Form */
 .form-group {
     margin-bottom: 16px;
 }
@@ -101,79 +105,15 @@ label {
     display: block;
     margin-bottom: 6px;
     font-weight: 600;
-    color: #2d3748;
     font-size: 14px;
 }
 
 input, select {
     width: 100%;
-    padding: 12px 14px;
+    padding: 12px;
     border: 2px solid #e2e8f0;
     border-radius: 12px;
     font-size: 14px;
-    font-family: inherit;
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-}
-
-/* Camera */
-.camera-container {
-    background: #f7fafc;
-    border-radius: 16px;
-    padding: 16px;
-    text-align: center;
-}
-
-.video-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #1a1a2e;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#video {
-    width: 100%;
-    height: auto;
-    display: block;
-    transform: scaleX(-1);
-}
-
-#canvas {
-    display: none;
-    width: 100%;
-    border-radius: 16px;
-}
-
-.photo-preview {
-    margin-top: 12px;
-}
-
-.photo-preview img {
-    width: 100%;
-    max-width: 200px;
-    border-radius: 12px;
-    margin: 0 auto;
-    display: block;
-    border: 3px solid #667eea;
-}
-
-.btn-group {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 12px;
-    flex-wrap: wrap;
 }
 
 button {
@@ -182,17 +122,8 @@ button {
     border: none;
     padding: 12px 20px;
     border-radius: 12px;
-    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s;
-    font-family: inherit;
-    flex: 1;
-    min-width: 120px;
-}
-
-button:active {
-    transform: scale(0.98);
 }
 
 .btn-secondary {
@@ -203,33 +134,33 @@ button:active {
     background: #f56565;
 }
 
-/* GPS Status */
+.submit-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
 .gps-status {
     padding: 12px;
     border-radius: 12px;
-    margin-top: 12px;
+    margin: 12px 0;
     font-size: 13px;
-    background: #e6f7ff;
-    color: #0050b3;
-    border: 1px solid #91d5ff;
 }
 
 .gps-success {
     background: #c6f6d5;
     color: #22543d;
-    border-color: #9ae6b4;
 }
 
 .gps-error {
     background: #fed7d7;
     color: #742a2a;
-    border-color: #fc8181;
 }
 
-/* Stats */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     margin-bottom: 20px;
 }
@@ -243,13 +174,12 @@ button:active {
 }
 
 .stat-value {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
 }
 
 .stat-label {
-    font-size: 11px;
-    opacity: 0.9;
+    font-size: 10px;
 }
 
 .kelas-list {
@@ -261,22 +191,20 @@ button:active {
 .kelas-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 10px;
     background: #f7fafc;
     border-radius: 12px;
+    font-size: 13px;
 }
 
 .kelas-name {
     font-weight: 700;
     width: 45px;
-    font-size: 14px;
 }
 
 .kelas-counts {
     display: flex;
     gap: 12px;
-    font-size: 12px;
 }
 
 .kelas-counts span {
@@ -285,35 +213,87 @@ button:active {
     gap: 4px;
 }
 
-.file-info {
-    font-size: 12px;
-    color: #718096;
-    margin-top: 6px;
-}
-
-.submit-btn {
-    width: 100%;
-    padding: 14px;
-    font-size: 16px;
-    margin-top: 8px;
-}
-
 hr {
     margin: 16px 0;
     border: none;
     border-top: 1px solid #e2e8f0;
 }
 
-@media (max-width: 480px) {
-    body {
-        padding: 12px;
-    }
-    
-    .stat-value {
-        font-size: 20px;
-    }
-    
-    .time {
-        font-size: 20px;
-    }
+.camera-container {
+    background: #f7fafc;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.video-wrapper {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+}
+
+#video {
+    width: 100%;
+}
+
+#canvas {
+    display: none;
+    width: 100%;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.file-info {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 5px;
+}
+
+.photo-preview {
+    margin-top: 12px;
+}
+
+.photo-preview img {
+    max-width: 200px;
+    border-radius: 12px;
+}
+
+.file-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.file-preview-item {
+    position: relative;
+    width: 80px;
+}
+
+.file-preview-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.file-preview-item .remove-file {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
 }
