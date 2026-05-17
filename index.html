@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>SMPN 2 KAWALI - Presensi Daring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <img class="logo-img" src="logo.png" alt="Logo Sekolah" onerror="this.src='https://via.placeholder.com/60?text=LOGO'">
+                <div class="school-info">
+                    <h1>SMPN 2 KAWALI</h1>
+                    <p>Sistem Presensi Daring & Upload Tugas</p>
+                </div>
+            </div>
+            <div class="datetime">
+                <div class="date" id="date"></div>
+                <div class="time" id="time"></div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-edit"></i> Form Presensi
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> Nama Lengkap</label>
+                <input type="text" id="nama" required placeholder="Masukkan nama lengkap">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-users"></i> Kelas</label>
+                <select id="kelas" required>
+                    <option value="">Pilih Kelas</option>
+                    <option value="7a">7A</option>
+                    <option value="7b">7B</option>
+                    <option value="7c">7C</option>
+                    <option value="8a">8A</option>
+                    <option value="8b">8B</option>
+                    <option value="8c">8C</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-calendar-check"></i> Aktivitas</label>
+                <select id="aktivitas" required>
+                    <option value="">Pilih Aktivitas</option>
+                    <option value="Absen Masuk">✅ Absen Masuk (Scan Wajah)</option>
+                    <option value="Absen Pulang">🏠 Absen Pulang (Scan Wajah)</option>
+                    <option value="Upload Tugas">📤 Upload Tugas</option>
+                </select>
+            </div>
+
+            <!-- Camera Section -->
+            <div class="camera-container" id="cameraSection">
+                <label><i class="fas fa-camera"></i> Scan Wajah</label>
+                <div class="video-wrapper">
+                    <video id="video" autoplay playsinline muted></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+                <div class="btn-group">
+                    <button type="button" id="captureBtn" class="btn-secondary">
+                        <i class="fas fa-camera"></i> Ambil Gambar
+                    </button>
+                    <button type="button" id="retakeBtn" style="display:none;" class="btn-danger">
+                        <i class="fas fa-redo"></i> Ambil Ulang
+                    </button>
+                </div>
+                <div id="photoPreview" class="photo-preview"></div>
+            </div>
+
+            <!-- Upload Tugas -->
+            <div class="form-group" id="uploadTugasGroup" style="display:none;">
+                <label><i class="fas fa-upload"></i> Upload Tugas (Foto)</label>
+                <input type="file" id="fileTugas" accept="image/jpeg,image/png,image/jpg">
+                <div class="file-info">📎 Max 2MB, format JPG/PNG</div>
+            </div>
+
+            <!-- GPS Status -->
+            <div id="gpsStatus" class="gps-status">
+                <i class="fas fa-map-marker-alt"></i> Mengambil lokasi...
+            </div>
+
+            <button type="submit" id="submitBtn" class="submit-btn">
+                <i class="fas fa-paper-plane"></i> KIRIM SEKARANG
+            </button>
+        </div>
+
+        <!-- Statistik -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-chart-line"></i> Total Absensi Hari Ini
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalMasuk">0</div>
+                    <div class="stat-label">Absen Masuk</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalPulang">0</div>
+                    <div class="stat-label">Absen Pulang</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalTugas">0</div>
+                    <div class="stat-label">Upload Tugas</div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="card-title">
+                <i class="fas fa-chart-bar"></i> Statistik Per Kelas
+            </div>
+            <div id="kelasStats" class="kelas-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
