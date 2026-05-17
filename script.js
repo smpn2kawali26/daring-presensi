@@ -1,45 +1,96 @@
 // ==================== KONFIGURASI ====================
-// URL Apps Script Anda
 const API_URL = 'https://script.google.com/macros/s/AKfycbxcw0J59ojWkJxQJKRgn8UmNLHee1qwyAmMCR3oU2DmveaqjHDXP8_lryRlJV0cJrljBQ/exec';
 
-// Variabel global
 let currentStream = null;
 let capturedPhoto = null;
 let currentLocation = null;
+let currentFacingMode = 'user';
+let selectedFiles = [];
+
+// Logo dari Google Drive
+const logoImg = document.getElementById('logoImg');
+if (logoImg) {
+    logoImg.src = 'https://drive.google.com/uc?export=view&id=1nlVZtT1OQJKcX61ylMOkufbIE9x2MK6k';
+}
 
 // ==================== INISIALISASI ====================
 document.addEventListener('DOMContentLoaded', function() {
-    startCamera();
     updateDateTime();
     setInterval(updateDateTime, 1000);
     getLocationOnly();
     loadStats();
     setInterval(loadStats, 30000);
     
-    // Event listener untuk aktivitas
+    // Event listener aktivitas
     document.getElementById('aktivitas').addEventListener('change', function() {
-        const uploadGroup = document.getElementById('uploadTugasGroup');
+        const aktivitas = this.value;
         const cameraSection = document.getElementById('cameraSection');
+        const cameraSelectGroup = document.getElementById('cameraSelectGroup');
+        const uploadGroup = document.getElementById('uploadTugasGroup');
         
-        if (this.value === 'Upload Tugas') {
+        if (aktivitas === 'Upload Tugas') {
+            cameraSection.style.display = 'none';
+            cameraSelectGroup.style.display = 'none';
             uploadGroup.style.display = 'block';
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+        } else if (aktivitas === 'Absen Masuk' || aktivitas === 'Absen Pulang' || aktivitas === 'Izin') {
             cameraSection.style.display = 'block';
-        } else if (this.value === 'Absen Masuk' || this.value === 'Absen Pulang') {
+            cameraSelectGroup.style.display = 'block';
             uploadGroup.style.display = 'none';
-            cameraSection.style.display = 'block';
+            startCamera();
         } else {
+            cameraSection.style.display = 'none';
+            cameraSelectGroup.style.display = 'none';
             uploadGroup.style.display = 'none';
-            cameraSection.style.display = 'block';
         }
+    });
+    
+    // Event listener pilihan kamera
+    document.getElementById('cameraSelect').addEventListener('change', function() {
+        currentFacingMode = this.value;
+        startCamera();
     });
     
     // Event listener tombol
     document.getElementById('captureBtn').addEventListener('click', capturePhoto);
     document.getElementById('retakeBtn').addEventListener('click', retakePhoto);
     document.getElementById('submitBtn').addEventListener('click', submitForm);
+    
+    // Event listener multiple file
+    document.getElementById('fileTugas').addEventListener('change', handleFileSelect);
 });
 
-// ==================== FUNGSI KAMERA ====================
+// ==================== CEK JAM OPERASIONAL ====================
+function isOperationalHour() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 60 + minutes;
+    const startTime = 6 * 60 + 45; // 06:45
+    const endTime = 14 * 60 + 0;   // 14:00
+    
+    return currentTime >= startTime && currentTime <= endTime;
+}
+
+function updateDateTime() {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('date').innerHTML = now.toLocaleDateString('id-ID', options);
+    document.getElementById('time').innerHTML = now.toLocaleTimeString('id-ID');
+    
+    const statusDiv = document.getElementById('statusJam');
+    if (isOperationalHour()) {
+        statusDiv.innerHTML = '✅ Waktu Presensi: BUKA (06:45 - 14:00)';
+        statusDiv.className = 'jam-status open';
+    } else {
+        statusDiv.innerHTML = '⛔ Waktu Presensi: TUTUP (Buka 06:45 - 14:00)';
+        statusDiv.className = 'jam-status closed';
+    }
+}
+
+// ==================== KAMERA ====================
 async function startCamera() {
     try {
         if (currentStream) {
@@ -48,9 +99,7 @@ async function startCamera() {
         
         const constraints = {
             video: {
-                facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+                facingMode: { exact: currentFacingMode }
             }
         };
         
@@ -59,34 +108,22 @@ async function startCamera() {
         video.srcObject = currentStream;
         video.setAttribute('playsinline', true);
         
-        await new Promise((resolve) => {
-            video.onloadedmetadata = () => {
-                video.play();
-                resolve();
-            };
-        });
-        
-        console.log('Kamera berhasil diaktifkan');
+        // Reset tampilan
+        document.getElementById('video').style.display = 'block';
+        document.getElementById('canvas').style.display = 'none';
+        document.getElementById('captureBtn').style.display = 'inline-block';
+        document.getElementById('retakeBtn').style.display = 'none';
+        document.getElementById('photoPreview').innerHTML = '';
+        capturedPhoto = null;
         
     } catch (err) {
         console.error('Camera error:', err);
-        const videoWrapper = document.querySelector('.video-wrapper');
-        let errorMsg = '';
-        
-        if (err.name === 'NotAllowedError') {
-            errorMsg = 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.';
-        } else if (err.name === 'NotFoundError') {
-            errorMsg = 'Tidak ada kamera yang terdeteksi di perangkat ini.';
-        } else if (err.name === 'NotReadableError') {
-            errorMsg = 'Kamera sedang digunakan oleh aplikasi lain.';
-        } else {
-            errorMsg = 'Tidak dapat mengakses kamera: ' + err.message;
-        }
-        
-        if (videoWrapper) {
-            videoWrapper.innerHTML = `<div style="padding:20px; background:#eee; border-radius:12px; text-align:center;">
-                <i class="fas fa-camera-slash" style="font-size:32px; margin-bottom:10px; display:block;"></i>
-                ⚠️ ${errorMsg}<br><small>Pastikan Anda memberikan izin kamera saat diminta browser.</small>
+        const wrapper = document.querySelector('.video-wrapper');
+        if (wrapper) {
+            wrapper.innerHTML = `<div style="padding:20px;color:red;text-align:center;">
+                <i class="fas fa-camera-slash" style="font-size:32px;margin-bottom:10px;display:block;"></i>
+                ⚠️ Izin kamera ditolak. Silakan izinkan akses kamera.<br>
+                <small>Error: ${err.message}</small>
             </div>`;
         }
     }
@@ -95,96 +132,104 @@ async function startCamera() {
 function capturePhoto() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    
-    if (!video.videoWidth || video.videoWidth === 0) {
-        alert('Kamera belum siap. Silakan tunggu atau refresh halaman.');
-        return;
-    }
-    
     const context = canvas.getContext('2d');
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.drawImage(video, 0, 0);
     
-    capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+    // Kompress foto (kualitas 50% untuk ukuran kecil)
+    capturedPhoto = canvas.toDataURL('image/jpeg', 0.5);
     
     const preview = document.getElementById('photoPreview');
-    preview.innerHTML = `<img src="${capturedPhoto}" alt="Foto wajah" style="width:100%; max-width:200px; border-radius:12px; border:3px solid #667eea;">`;
+    preview.innerHTML = `<img src="${capturedPhoto}" alt="Foto">`;
     
-    document.getElementById('video').style.display = 'none';
-    document.getElementById('canvas').style.display = 'block';
+    video.style.display = 'none';
+    canvas.style.display = 'block';
     document.getElementById('captureBtn').style.display = 'none';
     document.getElementById('retakeBtn').style.display = 'inline-block';
     
-    // Matikan stream kamera untuk hemat baterai
     if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
-        currentStream = null;
     }
 }
 
 function retakePhoto() {
     capturedPhoto = null;
-    document.getElementById('video').style.display = 'block';
-    document.getElementById('canvas').style.display = 'none';
-    document.getElementById('captureBtn').style.display = 'inline-block';
-    document.getElementById('retakeBtn').style.display = 'none';
-    document.getElementById('photoPreview').innerHTML = '';
     startCamera();
 }
 
-// ==================== FUNGSI GPS (Hanya Mencatat) ====================
+// ==================== HANDLE MULTIPLE FILE UPLOAD ====================
+function handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    selectedFiles = [];
+    
+    if (files.length > 5) {
+        alert('Maksimal 5 file!');
+        document.getElementById('fileTugas').value = '';
+        return;
+    }
+    
+    const previewContainer = document.getElementById('filePreview');
+    previewContainer.innerHTML = '';
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 2 * 1024 * 1024) {
+            alert(`File ${file.name} terlalu besar! Maksimal 2MB`);
+            continue;
+        }
+        
+        selectedFiles.push(file);
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'file-preview-item';
+            div.innerHTML = `
+                <img src="${e.target.result}">
+                <div class="remove-file" data-index="${i}">×</div>
+            `;
+            previewContainer.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ==================== GPS ====================
 function getLocationOnly() {
     const gpsDiv = document.getElementById('gpsStatus');
-    if (!gpsDiv) return;
-    
-    gpsDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengambil lokasi Anda...';
-    
     if (!navigator.geolocation) {
-        gpsDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Browser tidak mendukung GPS. Lokasi tidak akan tercatat.';
-        gpsDiv.className = 'gps-status gps-warning';
+        gpsDiv.innerHTML = '⚠️ GPS tidak didukung';
         return;
     }
     
     navigator.geolocation.getCurrentPosition(
-        function(position) {
+        function(pos) {
             currentLocation = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                accuracy: Math.round(position.coords.accuracy)
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                accuracy: Math.round(pos.coords.accuracy)
             };
-            
-            gpsDiv.innerHTML = `<i class="fas fa-check-circle"></i> ✅ Lokasi berhasil dicatat!
-                <br><small>📌 ${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}</small>
-                <br><small>📍 Akurasi: ${currentLocation.accuracy} meter</small>`;
+            gpsDiv.innerHTML = `✅ Lokasi tercatat: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)} (Akurasi: ${currentLocation.accuracy}m)`;
             gpsDiv.className = 'gps-status gps-success';
         },
-        function(error) {
-            let errorMsg = '';
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMsg = 'Izin lokasi ditolak. Lokasi tidak akan tercatat.';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMsg = 'Lokasi tidak tersedia.';
-                    break;
-                case error.TIMEOUT:
-                    errorMsg = 'Waktu pengambilan lokasi habis.';
-                    break;
-                default:
-                    errorMsg = 'Gagal mengambil lokasi.';
-            }
-            gpsDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ⚠️ ${errorMsg}
-                <br><small>Absen tetap bisa dilakukan, namun lokasi tidak akan tercatat.</small>`;
+        function() {
+            gpsDiv.innerHTML = '⚠️ Izin lokasi ditolak, lokasi tidak akan tercatat';
             gpsDiv.className = 'gps-status gps-error';
             currentLocation = { lat: 0, lng: 0, accuracy: 0 };
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        }
     );
 }
 
-// ==================== FUNGSI SUBMIT ====================
+// ==================== SUBMIT ====================
 async function submitForm() {
+    // Cek jam operasional
+    if (!isOperationalHour()) {
+        alert('⛔ Maaf, presensi hanya dapat diisi pada pukul 06:45 - 14:00');
+        return;
+    }
+    
     const nama = document.getElementById('nama').value.trim();
     const kelas = document.getElementById('kelas').value;
     const aktivitas = document.getElementById('aktivitas').value;
@@ -194,52 +239,48 @@ async function submitForm() {
         return;
     }
     
-    if ((aktivitas === 'Absen Masuk' || aktivitas === 'Absen Pulang') && !capturedPhoto) {
+    // Validasi untuk aktivitas yang butuh foto wajah
+    if ((aktivitas === 'Absen Masuk' || aktivitas === 'Absen Pulang' || aktivitas === 'Izin') && !capturedPhoto) {
         alert('❌ Harap ambil foto wajah terlebih dahulu!');
         return;
     }
     
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
-    
-    let tugasData = null;
-    if (aktivitas === 'Upload Tugas') {
-        const fileInput = document.getElementById('fileTugas');
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            if (file.size > 2 * 1024 * 1024) {
-                alert('❌ File terlalu besar! Maksimal 2MB');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> KIRIM SEKARANG';
-                return;
-            }
-            tugasData = await fileToBase64(file);
-        } else {
-            alert('❌ Harap pilih file tugas!');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> KIRIM SEKARANG';
-            return;
-        }
+    // Validasi upload tugas
+    if (aktivitas === 'Upload Tugas' && selectedFiles.length === 0) {
+        alert('❌ Harap pilih file tugas!');
+        return;
     }
     
-    const data = {
-        nama: nama,
-        kelas: kelas,
-        aktivitas: aktivitas,
-        fotoData: capturedPhoto,
-        tugasData: tugasData,
-        lokasi: currentLocation || { lat: 0, lng: 0, accuracy: 0 },
-        userAgent: navigator.userAgent
-    };
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Mengirim...';
     
     try {
-        const response = await fetch(API_URL, {
+        let tugasDataArray = [];
+        
+        // Proses upload multiple file
+        if (aktivitas === 'Upload Tugas') {
+            for (const file of selectedFiles) {
+                const compressed = await compressImage(file);
+                tugasDataArray.push(compressed);
+            }
+        }
+        
+        const data = {
+            nama: nama,
+            kelas: kelas,
+            aktivitas: aktivitas,
+            fotoData: capturedPhoto,
+            tugasData: tugasDataArray,
+            lokasi: currentLocation || { lat: 0, lng: 0, accuracy: 0 },
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+        };
+        
+        await fetch(API_URL, {
             method: 'POST',
             mode: 'no-cors',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         
@@ -250,58 +291,79 @@ async function submitForm() {
         document.getElementById('kelas').value = '';
         document.getElementById('aktivitas').value = '';
         document.getElementById('fileTugas').value = '';
+        document.getElementById('filePreview').innerHTML = '';
+        selectedFiles = [];
+        
         if (capturedPhoto) {
             retakePhoto();
         }
-        loadStats();
+        
         getLocationOnly();
+        loadStats();
         
     } catch (error) {
         alert('❌ Gagal mengirim: ' + error.message);
     } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> KIRIM SEKARANG';
+        btn.disabled = false;
+        btn.innerHTML = '📤 KIRIM SEKARANG';
     }
 }
 
-// Helper: Convert file ke base64
-function fileToBase64(file) {
+// Kompress gambar untuk upload tugas
+function compressImage(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // Resize jika terlalu besar (max 1024px)
+                const maxSize = 1024;
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    } else {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Kompress ke JPEG quality 60%
+                const compressed = canvas.toDataURL('image/jpeg', 0.6);
+                resolve(compressed);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 }
 
-// ==================== FUNGSI WAKTU ====================
-function updateDateTime() {
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const dateElement = document.getElementById('date');
-    const timeElement = document.getElementById('time');
-    
-    if (dateElement) dateElement.innerHTML = now.toLocaleDateString('id-ID', options);
-    if (timeElement) timeElement.innerHTML = now.toLocaleTimeString('id-ID');
-}
-
-// ==================== FUNGSI STATISTIK ====================
+// ==================== STATISTIK ====================
 async function loadStats() {
     try {
-        // Panggil API untuk mendapatkan statistik
         const response = await fetch(`${API_URL}?action=getStats`);
-        // Karena mode no-cors, kita tidak bisa membaca response
-        // Tampilkan data statistik dari sheet langsung
-        console.log('Memuat statistik...');
+        // Karena mode no-cors, kita tampilkan data dummy dulu
+        // Data real akan diupdate dari backend nanti
         
-        // Tampilkan data contoh (nanti akan diupdate dari Apps Script)
+        // Contoh data statistik per kelas
         updateKelasStats({
-            '7a': { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 },
-            '7b': { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 },
-            '7c': { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 },
-            '8a': { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 },
-            '8b': { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 },
-            '8c': { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 }
+            '7a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+            '7b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+            '7c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+            '8a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+            '8b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+            '8c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 }
         });
         
     } catch (error) {
@@ -316,8 +378,16 @@ function updateKelasStats(kelasStats) {
     container.innerHTML = '';
     const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
     
+    // Update total keseluruhan
+    let totalMasuk = 0, totalPulang = 0, totalIzin = 0, totalTugas = 0;
+    
     for (const kelas of kelasList) {
-        const data = kelasStats[kelas] || { absenMasuk: 0, absenPulang: 0, uploadTugas: 0 };
+        const data = kelasStats[kelas] || { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 };
+        totalMasuk += data.absenMasuk;
+        totalPulang += data.absenPulang;
+        totalIzin += data.izin;
+        totalTugas += data.tugas;
+        
         const div = document.createElement('div');
         div.className = 'kelas-item';
         div.innerHTML = `
@@ -325,16 +395,15 @@ function updateKelasStats(kelasStats) {
             <div class="kelas-counts">
                 <span>📥 ${data.absenMasuk}</span>
                 <span>🏠 ${data.absenPulang}</span>
-                <span>📄 ${data.uploadTugas}</span>
+                <span>📝 ${data.izin}</span>
+                <span>📄 ${data.tugas}</span>
             </div>
         `;
         container.appendChild(div);
     }
-}
-
-// ==================== LOGO ====================
-// Logo dari Google Drive
-const logoImg = document.getElementById('logoImg');
-if (logoImg) {
-    logoImg.src = 'https://drive.google.com/uc?export=view&id=1nlVZtT1OQJKcX61ylMOkufbIE9x2MK6k';
+    
+    document.getElementById('totalMasuk').innerText = totalMasuk;
+    document.getElementById('totalPulang').innerText = totalPulang;
+    document.getElementById('totalIzin').innerText = totalIzin;
+    document.getElementById('totalTugas').innerText = totalTugas;
 }
