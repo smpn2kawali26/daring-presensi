@@ -16,12 +16,14 @@ body {
     margin: 0 auto;
 }
 
+/* ==================== HEADER ==================== */
 .header {
     background: white;
     border-radius: 24px;
     padding: 20px;
     margin-bottom: 16px;
     text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
 .logo-section {
@@ -30,17 +32,20 @@ body {
     justify-content: center;
     gap: 12px;
     margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 
 .logo-img {
     width: 60px;
     height: 60px;
     object-fit: contain;
+    border-radius: 12px;
 }
 
 .school-info h1 {
     color: #2d3748;
     font-size: 20px;
+    margin-bottom: 4px;
 }
 
 .school-info p {
@@ -57,6 +62,7 @@ body {
 
 .date {
     font-size: 14px;
+    font-weight: 600;
     color: #2d3748;
 }
 
@@ -64,13 +70,15 @@ body {
     font-size: 24px;
     font-weight: 700;
     color: #667eea;
+    font-family: monospace;
 }
 
 .jam-status {
     font-size: 12px;
-    margin-top: 5px;
-    padding: 4px;
+    margin-top: 8px;
+    padding: 6px;
     border-radius: 8px;
+    font-weight: 600;
 }
 
 .jam-status.open {
@@ -83,11 +91,13 @@ body {
     color: #742a2a;
 }
 
+/* ==================== CARD ==================== */
 .card {
     background: white;
     border-radius: 24px;
     padding: 20px;
     margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
 .card-title {
@@ -95,8 +105,14 @@ body {
     font-weight: 700;
     color: #2d3748;
     margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 4px solid #667eea;
+    padding-left: 12px;
 }
 
+/* ==================== FORM ==================== */
 .form-group {
     margin-bottom: 16px;
 }
@@ -105,120 +121,27 @@ label {
     display: block;
     margin-bottom: 6px;
     font-weight: 600;
+    color: #2d3748;
     font-size: 14px;
 }
 
 input, select {
     width: 100%;
-    padding: 12px;
+    padding: 12px 14px;
     border: 2px solid #e2e8f0;
     border-radius: 12px;
     font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s ease;
 }
 
-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
+input:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
 }
 
-.btn-secondary {
-    background: #48bb78;
-}
-
-.btn-danger {
-    background: #f56565;
-}
-
-.submit-btn {
-    width: 100%;
-    padding: 14px;
-    font-size: 16px;
-    margin-top: 8px;
-}
-
-.gps-status {
-    padding: 12px;
-    border-radius: 12px;
-    margin: 12px 0;
-    font-size: 13px;
-}
-
-.gps-success {
-    background: #c6f6d5;
-    color: #22543d;
-}
-
-.gps-error {
-    background: #fed7d7;
-    color: #742a2a;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.stat-item {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 12px;
-    border-radius: 16px;
-    text-align: center;
-}
-
-.stat-value {
-    font-size: 20px;
-    font-weight: 800;
-}
-
-.stat-label {
-    font-size: 10px;
-}
-
-.kelas-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.kelas-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background: #f7fafc;
-    border-radius: 12px;
-    font-size: 13px;
-}
-
-.kelas-name {
-    font-weight: 700;
-    width: 45px;
-}
-
-.kelas-counts {
-    display: flex;
-    gap: 12px;
-}
-
-.kelas-counts span {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-hr {
-    margin: 16px 0;
-    border: none;
-    border-top: 1px solid #e2e8f0;
-}
-
+/* ==================== KAMERA ==================== */
 .camera-container {
     background: #f7fafc;
     border-radius: 16px;
@@ -233,28 +156,24 @@ hr {
     margin: 0 auto;
     border-radius: 16px;
     overflow: hidden;
-    background: #000;
+    background: #1a1a2e;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #video {
     width: 100%;
+    height: auto;
+    display: block;
+    transform: scaleX(-1);
 }
 
 #canvas {
     display: none;
     width: 100%;
-}
-
-.btn-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 12px;
-}
-
-.file-info {
-    font-size: 12px;
-    color: #718096;
-    margin-top: 5px;
+    border-radius: 16px;
 }
 
 .photo-preview {
@@ -262,38 +181,393 @@ hr {
 }
 
 .photo-preview img {
+    width: 100%;
     max-width: 200px;
     border-radius: 12px;
+    margin: 0 auto;
+    display: block;
+    border: 3px solid #667eea;
+}
+
+/* ==================== BUTTON ==================== */
+.btn-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    font-family: inherit;
+    flex: 1;
+    min-width: 120px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: #48bb78;
+}
+
+.btn-secondary:hover {
+    background: #38a169;
+}
+
+.btn-danger {
+    background: #f56565;
+}
+
+.btn-danger:hover {
+    background: #e53e3e;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, #48bb78 0%, #2f855a 100%);
+}
+
+.submit-btn:hover {
+    background: linear-gradient(135deg, #38a169 0%, #276749 100%);
+}
+
+/* ==================== GPS STATUS ==================== */
+.gps-status {
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    line-height: 1.4;
+}
+
+.gps-success {
+    background: #c6f6d5;
+    color: #22543d;
+    border: 1px solid #9ae6b4;
+}
+
+.gps-error {
+    background: #fed7d7;
+    color: #742a2a;
+    border: 1px solid #fc8181;
+}
+
+.gps-warning {
+    background: #feebc8;
+    color: #7b341e;
+    border: 1px solid #fbd38d;
+}
+
+/* ==================== STATISTIK ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 8px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.stat-label {
+    font-size: 10px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+/* ==================== STATISTIK PER KELAS ==================== */
+.kelas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.kelas-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f7fafc;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.kelas-item:hover {
+    background: #edf2f7;
+}
+
+.kelas-name {
+    font-weight: 700;
+    width: 45px;
+    font-size: 14px;
+    color: #2d3748;
+}
+
+.kelas-counts {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+}
+
+.kelas-counts span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #4a5568;
+}
+
+.kelas-counts span i {
+    font-size: 12px;
+}
+
+/* ==================== UPLOAD FILE ==================== */
+.file-info {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 6px;
 }
 
 .file-preview {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
 .file-preview-item {
     position: relative;
     width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .file-preview-item img {
-    width: 80px;
-    height: 80px;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 8px;
 }
 
-.file-preview-item .remove-file {
+.remove-file {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: red;
+    background: #f56565;
     color: white;
     border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.remove-file:hover {
+    transform: scale(1.1);
+    background: #e53e3e;
+}
+
+/* ==================== HR ==================== */
+hr {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 480px) {
+    body {
+        padding: 12px;
+    }
+    
+    .stat-value {
+        font-size: 16px;
+    }
+    
+    .stat-label {
+        font-size: 9px;
+    }
+    
+    .time {
+        font-size: 20px;
+    }
+    
+    .kelas-counts {
+        gap: 8px;
+        font-size: 11px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .stats-grid {
+        gap: 8px;
+    }
+    
+    .stat-item {
+        padding: 8px 4px;
+    }
+    
+    button {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-width: 100px;
+    }
+    
+    .card {
+        padding: 16px;
+    }
+}
+
+/* ==================== SCROLLBAR ==================== */
+.kelas-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.kelas-list::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 4px;
+}
+
+.kelas-list::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+/* ==================== ANIMASI ==================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ==================== LOADING ==================== */
+.loading {
+    display: inline-block;
     width: 20px;
     height: 20px;
-    font-size: 12px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==================== NOTIFICATION ==================== */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d3748;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    z-index: 1000;
+    animation: slideUp 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ==================== KAMERA SELECT ==================== */
+#cameraSelect {
+    background: white;
     cursor: pointer;
+}
+
+#cameraSelect option {
+    padding: 10px;
+}
+
+/* ==================== FILE INPUT ==================== */
+input[type="file"] {
+    padding: 10px;
+    background: #f7fafc;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 10px;
+    font-family: inherit;
+}
+
+input[type="file"]::file-selector-button:hover {
+    opacity: 0.9;
 }
