@@ -13,7 +13,7 @@
         <!-- Header -->
         <div class="header">
             <div class="logo-section">
-                <img class="logo-img" src="logo.png" alt="Logo Sekolah" onerror="this.src='https://via.placeholder.com/60?text=LOGO'">
+                <img class="logo-img" id="logoImg" alt="Logo Sekolah">
                 <div class="school-info">
                     <h1>SMPN 2 KAWALI</h1>
                     <p>Sistem Presensi Daring & Upload Tugas</p>
@@ -22,6 +22,7 @@
             <div class="datetime">
                 <div class="date" id="date"></div>
                 <div class="time" id="time"></div>
+                <div id="statusJam" class="jam-status"></div>
             </div>
         </div>
 
@@ -55,12 +56,22 @@
                     <option value="">Pilih Aktivitas</option>
                     <option value="Absen Masuk">✅ Absen Masuk (Scan Wajah)</option>
                     <option value="Absen Pulang">🏠 Absen Pulang (Scan Wajah)</option>
+                    <option value="Izin">📝 Izin (Scan Wajah)</option>
                     <option value="Upload Tugas">📤 Upload Tugas</option>
                 </select>
             </div>
 
+            <!-- Pilihan Kamera -->
+            <div class="form-group" id="cameraSelectGroup" style="display:none;">
+                <label><i class="fas fa-camera-retro"></i> Pilih Kamera</label>
+                <select id="cameraSelect">
+                    <option value="user">Kamera Depan</option>
+                    <option value="environment">Kamera Belakang</option>
+                </select>
+            </div>
+
             <!-- Camera Section -->
-            <div class="camera-container" id="cameraSection">
+            <div class="camera-container" id="cameraSection" style="display:none;">
                 <label><i class="fas fa-camera"></i> Scan Wajah</label>
                 <div class="video-wrapper">
                     <video id="video" autoplay playsinline muted></video>
@@ -77,11 +88,12 @@
                 <div id="photoPreview" class="photo-preview"></div>
             </div>
 
-            <!-- Upload Tugas -->
+            <!-- Upload Tugas Multiple -->
             <div class="form-group" id="uploadTugasGroup" style="display:none;">
-                <label><i class="fas fa-upload"></i> Upload Tugas (Foto)</label>
-                <input type="file" id="fileTugas" accept="image/jpeg,image/png,image/jpg">
-                <div class="file-info">📎 Max 2MB, format JPG/PNG</div>
+                <label><i class="fas fa-upload"></i> Upload Tugas (Max 5 Foto)</label>
+                <input type="file" id="fileTugas" accept="image/jpeg,image/png,image/jpg" multiple>
+                <div class="file-info">📎 Max 5 file, masing-masing max 2MB, format JPG/PNG</div>
+                <div id="filePreview" class="file-preview"></div>
             </div>
 
             <!-- GPS Status -->
@@ -109,6 +121,10 @@
                     <div class="stat-label">Absen Pulang</div>
                 </div>
                 <div class="stat-item">
+                    <div class="stat-value" id="totalIzin">0</div>
+                    <div class="stat-label">Izin</div>
+                </div>
+                <div class="stat-item">
                     <div class="stat-value" id="totalTugas">0</div>
                     <div class="stat-label">Upload Tugas</div>
                 </div>
@@ -117,7 +133,7 @@
             <hr>
 
             <div class="card-title">
-                <i class="fas fa-chart-bar"></i> Statistik Per Kelas
+                <i class="fas fa-chart-bar"></i> Statistik Per Kelas (Hari Ini)
             </div>
             <div id="kelasStats" class="kelas-list"></div>
         </div>
