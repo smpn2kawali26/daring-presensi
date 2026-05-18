@@ -228,6 +228,18 @@
             text-align: center;
         }
         
+        .aktivitas-notice {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         @media (max-width: 480px) {
             .stat-number { font-size: 14px; }
             .stat-label { font-size: 8px; }
@@ -286,6 +298,9 @@
                     <option value="Upload Tugas">📤 Upload Tugas (07:00 - 15:00)</option>
                 </select>
             </div>
+
+            <!-- Notifikasi khusus aktivitas -->
+            <div id="aktivitasNotice" class="aktivitas-notice" style="display:none;"></div>
 
             <div class="form-group mapel-group" id="mapelGroup">
                 <label>Mata Pelajaran <span class="required">*</span></label>
@@ -375,6 +390,74 @@
         let currentFileType = 'image';
 
         const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c', '9a', '9b', '9c'];
+
+        // ==================== NOTIFIKASI PER AKTIVITAS ====================
+        function getActivityNotice(aktivitas) {
+            switch(aktivitas) {
+                case 'Absen Masuk':
+                    return {
+                        icon: '✅',
+                        title: 'Absen Masuk',
+                        message: 'Silakan foto wajah Anda untuk mengkonfirmasi kehadiran. Pastikan wajah terlihat jelas dan pencahayaan cukup.',
+                        color: '#c6f6d5'
+                    };
+                case 'Absen Pulang':
+                    return {
+                        icon: '🏠',
+                        title: 'Absen Pulang',
+                        message: 'Silakan foto wajah Anda sebagai bukti telah menyelesaikan pembelajaran hari ini.',
+                        color: '#c6f6d5'
+                    };
+                case 'Izin':
+                    return {
+                        icon: '📝',
+                        title: 'Pengajuan Izin',
+                        message: '📌 *NOTIFIKASI IZIN*\n\nSilakan foto kondisi Anda saat ini sebagai bukti pengajuan izin tidak masuk sekolah. Foto akan menjadi arsip dan tidak disebarluaskan. Terima kasih.',
+                        color: '#fff3e0'
+                    };
+                case 'Sakit':
+                    return {
+                        icon: '🤒',
+                        title: 'Pengajuan Sakit',
+                        message: '💊 *NOTIFIKASI SAKIT*\n\nMohon foto kondisi kesehatan Anda saat ini (bisa foto wajah, surat dokter, atau kondisi terkait). Data Anda terjaga kerahasiaannya. Semoga cepat sehat kembali!',
+                        color: '#ffebee'
+                    };
+                case 'Upload Tugas':
+                    return {
+                        icon: '📤',
+                        title: 'Upload Tugas',
+                        message: 'Silakan upload foto atau video tugas Anda. Pastikan file tidak melebihi 5MB per file.',
+                        color: '#e8f5e9'
+                    };
+                default:
+                    return null;
+            }
+        }
+        
+        function updateActivityNotice() {
+            const aktivitas = document.getElementById('aktivitas').value;
+            const noticeDiv = document.getElementById('aktivitasNotice');
+            
+            if (!aktivitas || aktivitas === '') {
+                noticeDiv.style.display = 'none';
+                return;
+            }
+            
+            const notice = getActivityNotice(aktivitas);
+            if (notice) {
+                noticeDiv.style.display = 'flex';
+                noticeDiv.style.background = notice.color;
+                noticeDiv.innerHTML = `
+                    <i class="fas ${notice.icon === '✅' ? 'fa-check-circle' : notice.icon === '🏠' ? 'fa-home' : notice.icon === '📝' ? 'fa-file-alt' : notice.icon === '🤒' ? 'fa-thermometer-half' : 'fa-upload'}" style="font-size: 20px;"></i>
+                    <div style="flex: 1;">
+                        <strong>${notice.title}</strong><br>
+                        <span style="font-size: 12px;">${notice.message.replace(/\n/g, '<br>')}</span>
+                    </div>
+                `;
+            } else {
+                noticeDiv.style.display = 'none';
+            }
+        }
 
         // ==================== ATURAN JAM ABSEN ====================
         function getActivitySchedule(aktivitas) {
@@ -476,18 +559,15 @@
             
             if (needCamera.includes(aktivitas)) {
                 if (status.isOpen) {
-                    // Waktu buka - tampilkan kamera dan aktifkan
                     cameraBox.style.display = 'block';
                     cameraSelectGroup.style.display = 'block';
                     if (captureBtn) captureBtn.disabled = false;
                     if (submitBtn) submitBtn.disabled = false;
                     startCamera();
                 } else {
-                    // Waktu tutup - sembunyikan kamera
                     cameraBox.style.display = 'none';
                     cameraSelectGroup.style.display = 'none';
                     if (captureBtn) captureBtn.disabled = true;
-                    // Hentikan stream kamera jika ada
                     if (currentStream) {
                         currentStream.getTracks().forEach(t => t.stop());
                         currentStream = null;
@@ -603,7 +683,6 @@
 
         // ==================== KAMERA ====================
         async function startCamera() {
-            // Cek apakah aktivitas masih dalam jam operasional
             const aktivitas = document.getElementById('aktivitas').value;
             if (!isActivityAllowed(aktivitas)) {
                 return;
@@ -639,7 +718,6 @@
         });
 
         document.getElementById('captureBtn').onclick = function() {
-            // Cek ulang apakah masih dalam jam operasional
             const aktivitas = document.getElementById('aktivitas').value;
             if (!isActivityAllowed(aktivitas)) {
                 alert('⛔ Waktu absen sudah habis!');
@@ -770,18 +848,19 @@
                 currentStream = null;
             }
             
+            // Update notifikasi aktivitas
+            updateActivityNotice();
+            
             if (val === 'Upload Tugas') {
                 uploadBox.style.display = 'block';
                 mapelGroup.style.display = 'block';
             } else if (val === 'Absen Masuk' || val === 'Absen Pulang' || val === 'Izin' || val === 'Sakit') {
-                // Cek status waktu
                 const status = getActivityStatus(val);
                 if (status.isOpen) {
                     cameraBox.style.display = 'block';
                     cameraSelectGroup.style.display = 'block';
                     startCamera();
                 } else {
-                    // Tampilkan pesan bahwa kamera tidak tersedia
                     cameraBox.style.display = 'block';
                     cameraSelectGroup.style.display = 'none';
                     const videoWrapper = document.querySelector('.video-wrapper');
@@ -846,7 +925,6 @@
             if (!kelas) { alert('❌ Kelas wajib dipilih!'); return; }
             if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
             
-            // Validasi waktu (Cek ulang saat submit)
             if (!isActivityAllowed(aktivitas)) {
                 const status = getActivityStatus(aktivitas);
                 alert(`⛔ ${status.message}`);
@@ -911,7 +989,6 @@
                 
                 alert('✅ Data berhasil dikirim!');
                 
-                // Reset form
                 document.getElementById('nama').value = '';
                 document.getElementById('kelas').value = '';
                 document.getElementById('aktivitas').value = '';
@@ -924,11 +1001,11 @@
                     document.getElementById('retakeBtn').click();
                 }
                 
-                // Sembunyikan kamera
                 document.getElementById('cameraBox').style.display = 'none';
                 document.getElementById('cameraSelectGroup').style.display = 'none';
                 document.getElementById('uploadBox').style.display = 'none';
                 document.getElementById('mapelGroup').style.display = 'none';
+                document.getElementById('aktivitasNotice').style.display = 'none';
                 
                 getLocation();
                 setTimeout(loadStatsFromSheet, 2000);
@@ -940,6 +1017,9 @@
                 btn.innerHTML = '📤 KIRIM SEKARANG';
             }
         };
+        
+        // Inisialisasi notifikasi
+        updateActivityNotice();
     </script>
 </body>
 </html>
