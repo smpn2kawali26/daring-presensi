@@ -74,6 +74,7 @@
             border-radius: 16px;
             padding: 16px;
             text-align: center;
+            display: none;
         }
         .video-wrapper {
             background: #000;
@@ -104,7 +105,6 @@
         }
         .btn-success { background: #2e7d32; }
         .btn-danger { background: #c62828; }
-        .btn-camera { background: #ff9800; }
         .submit-btn {
             width: 100%;
             background: #2e7d32;
@@ -178,9 +178,16 @@
         hr { margin: 16px 0; border: none; border-top: 1px solid #eee; }
         .required { color: red; margin-left: 3px; }
         .warning { color: red; font-size: 12px; margin-top: 5px; display: none; }
-        .camera-select-group { margin-bottom: 12px; text-align: left; }
+        .camera-select-group { 
+            margin-bottom: 12px; 
+            text-align: left;
+            display: none;
+        }
         .camera-select-group select { width: 100%; padding: 8px; border-radius: 8px; }
         .loading-stats { text-align: center; padding: 20px; color: #888; }
+        .mapel-group { display: none; }
+        .mapel-group label { font-weight: 600; }
+        .mapel-group select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -228,8 +235,27 @@
                 </select>
             </div>
 
+            <!-- Mata Pelajaran (khusus Upload Tugas) -->
+            <div class="form-group mapel-group" id="mapelGroup">
+                <label>Mata Pelajaran <span class="required">*</span></label>
+                <select id="mapel">
+                    <option value="">Pilih Mata Pelajaran</option>
+                    <option value="Matematika">📐 Matematika</option>
+                    <option value="Bahasa Indonesia">📖 Bahasa Indonesia</option>
+                    <option value="Bahasa Inggris">🇬🇧 Bahasa Inggris</option>
+                    <option value="IPA">🔬 IPA</option>
+                    <option value="IPS">🌍 IPS</option>
+                    <option value="PPKn">⚖️ PPKn</option>
+                    <option value="Agama">🕌 Agama</option>
+                    <option value="Penjaskes">⚽ Penjaskes</option>
+                    <option value="Seni Budaya">🎨 Seni Budaya</option>
+                    <option value="Prakarya">🛠️ Prakarya</option>
+                    <option value="Informatika">💻 Informatika</option>
+                </select>
+            </div>
+
             <!-- Pilihan Kamera Depan/Belakang -->
-            <div id="cameraSelectGroup" class="camera-select-group" style="display:none;">
+            <div id="cameraSelectGroup" class="camera-select-group">
                 <label><i class="fas fa-camera-retro"></i> Pilih Kamera</label>
                 <select id="cameraSelect">
                     <option value="user">📱 Kamera Depan</option>
@@ -280,7 +306,7 @@
             <hr>
             <div class="card-title">📊 Statistik Per Kelas</div>
             <div id="kelasStats" class="kelas-list">
-                <div class="loading-stats">Memuat statistik...</div>
+                <div class="loading-stats"><i class="fas fa-spinner fa-spin"></i> Memuat statistik...</div>
             </div>
         </div>
     </div>
@@ -322,15 +348,15 @@
                 const response = await fetch(`${API_URL}?action=getStats`);
                 const data = await response.json();
                 
+                console.log('Data statistik:', data); // Debug
+                
                 if (data.total && data.kelas) {
-                    // Update total
                     document.getElementById('totalMasuk').innerText = data.total.masuk || 0;
                     document.getElementById('totalPulang').innerText = data.total.pulang || 0;
                     document.getElementById('totalIzin').innerText = data.total.izin || 0;
                     document.getElementById('totalSakit').innerText = data.total.sakit || 0;
                     document.getElementById('totalTugas').innerText = data.total.tugas || 0;
                     
-                    // Update per kelas
                     container.innerHTML = '';
                     const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
                     
@@ -341,11 +367,11 @@
                         div.innerHTML = `
                             <span class="kelas-name">${k.toUpperCase()}</span>
                             <div class="kelas-counts">
-                                <span>📥 ${d.masuk}</span>
-                                <span>🏠 ${d.pulang}</span>
-                                <span>📝 ${d.izin}</span>
-                                <span>🤒 ${d.sakit}</span>
-                                <span>📄 ${d.tugas}</span>
+                                <span>📥 ${d.masuk || 0}</span>
+                                <span>🏠 ${d.pulang || 0}</span>
+                                <span>📝 ${d.izin || 0}</span>
+                                <span>🤒 ${d.sakit || 0}</span>
+                                <span>📄 ${d.tugas || 0}</span>
                             </div>
                         `;
                         container.appendChild(div);
@@ -359,10 +385,14 @@
             }
         }
         
-        // Load statistik saat halaman dimuat
         loadStatsFromSheet();
-        // Refresh setiap 30 detik
         setInterval(loadStatsFromSheet, 30000);
+
+        // ==================== SEMBUNYIKAN KAMERA AWAL ====================
+        document.getElementById('cameraBox').style.display = 'none';
+        document.getElementById('cameraSelectGroup').style.display = 'none';
+        document.getElementById('uploadBox').style.display = 'none';
+        document.getElementById('mapelGroup').style.display = 'none';
 
         // ==================== KAMERA ====================
         async function startCamera() {
@@ -484,28 +514,38 @@
         }
         getLocation();
 
-        // ==================== TOGGLE FORM ====================
+        // ==================== TOGGLE FORM BERDASARKAN AKTIVITAS ====================
         document.getElementById('aktivitas').onchange = function() {
             const val = this.value;
             const cameraBox = document.getElementById('cameraBox');
-            const uploadBox = document.getElementById('uploadBox');
             const cameraSelectGroup = document.getElementById('cameraSelectGroup');
+            const uploadBox = document.getElementById('uploadBox');
+            const mapelGroup = document.getElementById('mapelGroup');
+            
+            // Sembunyikan semua dulu
+            cameraBox.style.display = 'none';
+            cameraSelectGroup.style.display = 'none';
+            uploadBox.style.display = 'none';
+            mapelGroup.style.display = 'none';
+            
+            // Hentikan kamera jika sedang berjalan
+            if (currentStream) {
+                currentStream.getTracks().forEach(t => t.stop());
+            }
             
             if (val === 'Upload Tugas') {
-                cameraBox.style.display = 'none';
-                cameraSelectGroup.style.display = 'none';
+                // Tampilkan upload tugas dan mata pelajaran
                 uploadBox.style.display = 'block';
-                if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+                mapelGroup.style.display = 'block';
+                document.getElementById('cameraWarning').style.display = 'none';
+                document.getElementById('fileWarning').style.display = 'none';
             } else if (val === 'Absen Masuk' || val === 'Absen Pulang' || val === 'Izin' || val === 'Sakit') {
+                // Tampilkan kamera
                 cameraBox.style.display = 'block';
                 cameraSelectGroup.style.display = 'block';
-                uploadBox.style.display = 'none';
                 startCamera();
-            } else {
-                cameraBox.style.display = 'block';
-                cameraSelectGroup.style.display = 'none';
-                uploadBox.style.display = 'none';
             }
+            // Jika val kosong, semua tetap tersembunyi
         };
 
         // ==================== SUBMIT ====================
@@ -513,10 +553,18 @@
             const nama = document.getElementById('nama').value.trim();
             const kelas = document.getElementById('kelas').value;
             const aktivitas = document.getElementById('aktivitas').value;
+            const mapel = document.getElementById('mapel').value;
             
+            // Validasi
             if (!nama) { alert('❌ Nama lengkap wajib diisi!'); return; }
             if (!kelas) { alert('❌ Kelas wajib dipilih!'); return; }
             if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
+            
+            // Validasi mata pelajaran untuk upload tugas
+            if (aktivitas === 'Upload Tugas' && !mapel) {
+                alert('❌ Mata pelajaran wajib dipilih!');
+                return;
+            }
             
             const needPhoto = ['Absen Masuk', 'Absen Pulang', 'Izin', 'Sakit'];
             if (needPhoto.includes(aktivitas) && !capturedPhoto) {
@@ -548,22 +596,44 @@
                     }
                 }
                 
-                const data = { nama, kelas, aktivitas, fotoData: capturedPhoto, tugasData, lokasi: currentLocation || {} };
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
+                const data = { 
+                    nama, kelas, aktivitas, mapel: mapel || '',
+                    fotoData: capturedPhoto, 
+                    tugasData, 
+                    lokasi: currentLocation || {},
+                    timestamp: new Date().toISOString()
+                };
+                
+                await fetch(API_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(data), 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
                 
                 alert('✅ Data berhasil dikirim!');
                 
+                // Reset form
                 document.getElementById('nama').value = '';
                 document.getElementById('kelas').value = '';
                 document.getElementById('aktivitas').value = '';
+                document.getElementById('mapel').value = '';
                 document.getElementById('fileTugas').value = '';
                 document.getElementById('filePreview').innerHTML = '';
                 selectedFiles = [];
-                if (capturedPhoto) document.getElementById('retakeBtn').click();
-                getLocation();
                 
-                // Refresh statistik setelah submit
-                setTimeout(loadStatsFromSheet, 2000);
+                if (capturedPhoto) {
+                    document.getElementById('retakeBtn').click();
+                }
+                
+                // Sembunyikan komponen
+                document.getElementById('cameraBox').style.display = 'none';
+                document.getElementById('cameraSelectGroup').style.display = 'none';
+                document.getElementById('uploadBox').style.display = 'none';
+                document.getElementById('mapelGroup').style.display = 'none';
+                
+                getLocation();
+                loadStatsFromSheet();
                 
             } catch(e) { 
                 alert('❌ Gagal: ' + e.message); 
@@ -573,7 +643,7 @@
             }
         };
         
-        startCamera();
+        // Inisialisasi: tidak perlu start camera otomatis
     </script>
 </body>
 </html>
