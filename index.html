@@ -183,12 +183,14 @@
         .jam-status {
             font-size: 12px;
             margin-top: 8px;
-            padding: 6px;
+            padding: 8px;
             border-radius: 8px;
+            font-weight: 500;
         }
         .jam-status.open { background: #c6f6d5; color: #22543d; }
         .jam-status.closed { background: #fed7d7; color: #742a2a; }
         .jam-status.warning { background: #feebc8; color: #7b341e; }
+        .jam-status.info { background: #e6f7ff; color: #0050b3; }
         
         .file-type-select {
             display: flex;
@@ -355,69 +357,80 @@
         let currentFacing = 'user';
         let currentFileType = 'image';
 
-        // Daftar kelas (sudah termasuk 7,8,9)
         const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c', '9a', '9b', '9c'];
 
-        // ==================== ATURAN JAM ABSEN ====================
-        function isActivityAllowed(aktivitas) {
-            const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const currentTime = hours * 60 + minutes;
-            
-            let startTime, endTime;
-            
+        // ==================== ATURAN JAM ABSEN DENGAN NOTIFIKASI LENGKAP ====================
+        function getActivitySchedule(aktivitas) {
             switch(aktivitas) {
                 case 'Absen Masuk':
-                    startTime = 6 * 60;
-                    endTime = 8 * 60 + 15;
-                    break;
+                    return { start: 6 * 60, end: 8 * 60 + 15, startStr: '06:00', endStr: '08:15', name: 'Absen Masuk' };
                 case 'Absen Pulang':
-                    startTime = 11 * 60;
-                    endTime = 14 * 60;
-                    break;
+                    return { start: 11 * 60, end: 14 * 60, startStr: '11:00', endStr: '14:00', name: 'Absen Pulang' };
                 case 'Izin':
+                    return { start: 6 * 60, end: 8 * 60, startStr: '06:00', endStr: '08:00', name: 'Izin' };
                 case 'Sakit':
-                    startTime = 6 * 60;
-                    endTime = 8 * 60;
-                    break;
+                    return { start: 6 * 60, end: 8 * 60, startStr: '06:00', endStr: '08:00', name: 'Sakit' };
                 case 'Upload Tugas':
-                    startTime = 7 * 60;
-                    endTime = 15 * 60;
-                    break;
+                    return { start: 7 * 60, end: 15 * 60, startStr: '07:00', endStr: '15:00', name: 'Upload Tugas' };
                 default:
-                    return false;
+                    return null;
             }
-            
-            return currentTime >= startTime && currentTime <= endTime;
         }
 
-        function getTimeRemaining(aktivitas) {
+        function getActivityStatus(aktivitas) {
+            const schedule = getActivitySchedule(aktivitas);
+            if (!schedule) return { status: 'error', message: 'Aktivitas tidak dikenal' };
+            
             const now = new Date();
             const hours = now.getHours();
             const minutes = now.getMinutes();
             const currentTime = hours * 60 + minutes;
             
-            let endTime;
-            switch(aktivitas) {
-                case 'Absen Masuk': endTime = 8 * 60 + 15; break;
-                case 'Absen Pulang': endTime = 14 * 60; break;
-                case 'Izin':
-                case 'Sakit': endTime = 8 * 60; break;
-                case 'Upload Tugas': endTime = 15 * 60; break;
-                default: return 0;
+            if (currentTime < schedule.start) {
+                const remaining = schedule.start - currentTime;
+                const hoursRemaining = Math.floor(remaining / 60);
+                const minutesRemaining = remaining % 60;
+                let timeMsg = '';
+                if (hoursRemaining > 0) {
+                    timeMsg = `${hoursRemaining} jam ${minutesRemaining} menit lagi`;
+                } else {
+                    timeMsg = `${minutesRemaining} menit lagi`;
+                }
+                return {
+                    status: 'not_yet',
+                    message: `⏰ Belum waktunya ${schedule.name} (buka jam ${schedule.startStr}) - ${timeMsg}`,
+                    className: 'info'
+                };
+            } else if (currentTime <= schedule.end) {
+                const remaining = schedule.end - currentTime;
+                const hoursRemaining = Math.floor(remaining / 60);
+                const minutesRemaining = remaining % 60;
+                let timeMsg = '';
+                if (hoursRemaining > 0) {
+                    timeMsg = `${hoursRemaining} jam ${minutesRemaining} menit lagi`;
+                } else {
+                    timeMsg = `${minutesRemaining} menit lagi`;
+                }
+                return {
+                    status: 'open',
+                    message: `✅ ${schedule.name}: tersedia hingga jam ${schedule.endStr} (${timeMsg})`,
+                    className: 'open'
+                };
+            } else {
+                return {
+                    status: 'closed',
+                    message: `⛔ ${schedule.name} sudah ditutup (batas waktu jam ${schedule.endStr})`,
+                    className: 'closed'
+                };
             }
-            
-            const remaining = endTime - currentTime;
-            if (remaining <= 0) return 0;
-            
-            const hoursRemaining = Math.floor(remaining / 60);
-            const minutesRemaining = remaining % 60;
-            
-            if (hoursRemaining > 0) {
-                return `${hoursRemaining} jam ${minutesRemaining} menit`;
-            }
-            return `${minutesRemaining} menit`;
+        }
+
+        function isActivityAllowed(aktivitas) {
+            const schedule = getActivitySchedule(aktivitas);
+            if (!schedule) return false;
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            return currentTime >= schedule.start && currentTime <= schedule.end;
         }
 
         function updateJamStatus() {
@@ -425,19 +438,14 @@
             const statusDiv = document.getElementById('jamStatus');
             
             if (!aktivitas || aktivitas === '') {
-                statusDiv.innerHTML = '📅 Pilih aktivitas terlebih dahulu';
+                statusDiv.innerHTML = '📅 Silakan pilih aktivitas terlebih dahulu';
                 statusDiv.className = 'jam-status warning';
                 return;
             }
             
-            if (isActivityAllowed(aktivitas)) {
-                const remaining = getTimeRemaining(aktivitas);
-                statusDiv.innerHTML = `✅ Waktu tersedia: ${remaining} lagi`;
-                statusDiv.className = 'jam-status open';
-            } else {
-                statusDiv.innerHTML = `⛔ Waktu untuk ${aktivitas} sudah habis!`;
-                statusDiv.className = 'jam-status closed';
-            }
+            const status = getActivityStatus(aktivitas);
+            statusDiv.innerHTML = status.message;
+            statusDiv.className = `jam-status ${status.className}`;
         }
 
         // ==================== TAMPILAN WAKTU ====================
@@ -468,8 +476,6 @@
             window[callbackName] = function(data) {
                 delete window[callbackName];
                 document.head.removeChild(script);
-                
-                console.log('Data statistik:', data);
                 
                 if (data.total && data.kelas) {
                     document.getElementById('totalMasuk').innerText = data.total.masuk || 0;
@@ -762,7 +768,8 @@
             if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
             
             if (!isActivityAllowed(aktivitas)) {
-                alert(`⛔ Maaf, waktu untuk ${aktivitas} sudah habis!`);
+                const status = getActivityStatus(aktivitas);
+                alert(`⛔ ${status.message}`);
                 return;
             }
             
