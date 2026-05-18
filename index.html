@@ -13,9 +13,9 @@
         <!-- Header -->
         <div class="header">
             <div class="logo-section">
-                <!-- Logo menggunakan emoji sementara sampai file logo diupload -->
-                <div class="logo-placeholder">
-                    <i class="fas fa-school" style="font-size: 40px; color: #667eea;"></i>
+                <img class="logo-img" id="logoImg" alt="Logo Sekolah" src="logo.png" onerror="this.style.display='none'; this.nextSibling.style.display='flex';">
+                <div class="logo-placeholder" style="display:none;">
+                    <i class="fas fa-school"></i>
                 </div>
                 <div class="school-info">
                     <h1>SMPN 2 KAWALI</h1>
@@ -36,12 +36,12 @@
             </div>
             
             <div class="form-group">
-                <label><i class="fas fa-user"></i> Nama Lengkap</label>
+                <label><i class="fas fa-user"></i> Nama Lengkap <span class="required">*</span></label>
                 <input type="text" id="nama" required placeholder="Masukkan nama lengkap">
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-users"></i> Kelas</label>
+                <label><i class="fas fa-users"></i> Kelas <span class="required">*</span></label>
                 <select id="kelas" required>
                     <option value="">Pilih Kelas</option>
                     <option value="7a">7A</option>
@@ -54,13 +54,14 @@
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-calendar-check"></i> Aktivitas</label>
+                <label><i class="fas fa-calendar-check"></i> Aktivitas <span class="required">*</span></label>
                 <select id="aktivitas" required>
                     <option value="">Pilih Aktivitas</option>
-                    <option value="Absen Masuk">✅ Absen Masuk (Scan Wajah)</option>
-                    <option value="Absen Pulang">🏠 Absen Pulang (Scan Wajah)</option>
-                    <option value="Izin">📝 Izin (Scan Wajah)</option>
-                    <option value="Upload Tugas">📤 Upload Tugas</option>
+                    <option value="Absen Masuk">✅ Absen Masuk (06:00 - 08:00)</option>
+                    <option value="Absen Pulang">🏠 Absen Pulang (11:00 - 14:00)</option>
+                    <option value="Izin">📝 Izin (06:00 - 14:00)</option>
+                    <option value="Sakit">🤒 Sakit (06:00 - 14:00)</option>
+                    <option value="Upload Tugas">📤 Upload Tugas (06:00 - 15:00)</option>
                 </select>
             </div>
 
@@ -75,7 +76,7 @@
 
             <!-- Camera Section -->
             <div class="camera-container" id="cameraSection" style="display:none;">
-                <label><i class="fas fa-camera"></i> Scan Wajah</label>
+                <label><i class="fas fa-camera"></i> Scan Wajah <span class="required">*</span></label>
                 <div class="video-wrapper">
                     <video id="video" autoplay playsinline muted></video>
                     <canvas id="canvas"></canvas>
@@ -89,14 +90,16 @@
                     </button>
                 </div>
                 <div id="photoPreview" class="photo-preview"></div>
+                <div id="cameraWarning" class="warning-text" style="display:none;">⚠️ Wajib ambil foto!</div>
             </div>
 
             <!-- Upload Tugas Multiple -->
             <div class="form-group" id="uploadTugasGroup" style="display:none;">
-                <label><i class="fas fa-upload"></i> Upload Tugas (Max 5 Foto)</label>
+                <label><i class="fas fa-upload"></i> Upload Tugas (Max 5 Foto) <span class="required">*</span></label>
                 <input type="file" id="fileTugas" accept="image/jpeg,image/png,image/jpg" multiple>
                 <div class="file-info">📎 Max 5 file, masing-masing max 2MB, format JPG/PNG</div>
                 <div id="filePreview" class="file-preview"></div>
+                <div id="fileWarning" class="warning-text" style="display:none;">⚠️ Wajib upload minimal 1 file!</div>
             </div>
 
             <!-- GPS Status -->
@@ -128,6 +131,10 @@
                     <div class="stat-label">Izin</div>
                 </div>
                 <div class="stat-item">
+                    <div class="stat-value" id="totalSakit">0</div>
+                    <div class="stat-label">Sakit</div>
+                </div>
+                <div class="stat-item">
                     <div class="stat-value" id="totalTugas">0</div>
                     <div class="stat-label">Upload Tugas</div>
                 </div>
@@ -139,12 +146,12 @@
                 <i class="fas fa-chart-bar"></i> Statistik Per Kelas (Hari Ini)
             </div>
             <div id="kelasStats" class="kelas-list">
-                <div class="kelas-item"><span class="kelas-name">7A</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">7B</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">7C</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">8A</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">8B</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">8C</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>📄 0</span></div></div>
+                <div class="kelas-item"><span class="kelas-name">7A</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
+                <div class="kelas-item"><span class="kelas-name">7B</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
+                <div class="kelas-item"><span class="kelas-name">7C</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
+                <div class="kelas-item"><span class="kelas-name">8A</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
+                <div class="kelas-item"><span class="kelas-name">8B</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
+                <div class="kelas-item"><span class="kelas-name">8C</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
             </div>
         </div>
     </div>
