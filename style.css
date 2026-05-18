@@ -35,6 +35,19 @@ body {
     flex-wrap: wrap;
 }
 
+/* Logo Placeholder */
+.logo-placeholder {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
 .logo-img {
     width: 60px;
     height: 60px;
@@ -98,6 +111,7 @@ body {
     padding: 20px;
     margin-bottom: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    animation: fadeIn 0.3s ease;
 }
 
 .card-title {
@@ -463,6 +477,15 @@ hr {
     .card {
         padding: 16px;
     }
+    
+    .logo-placeholder {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .logo-placeholder i {
+        font-size: 24px;
+    }
 }
 
 /* ==================== SCROLLBAR ==================== */
@@ -492,8 +515,10 @@ hr {
     }
 }
 
-.card {
-    animation: fadeIn 0.3s ease;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ==================== LOADING ==================== */
@@ -505,12 +530,6 @@ hr {
     border-radius: 50%;
     border-top-color: transparent;
     animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 /* ==================== NOTIFICATION ==================== */
@@ -570,4 +589,44 @@ input[type="file"]::file-selector-button {
 
 input[type="file"]::file-selector-button:hover {
     opacity: 0.9;
+}
+
+/* ==================== BADGE ==================== */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.badge-warning {
+    background: #feebc8;
+    color: #7b341e;
+}
+
+/* ==================== DIVIDER ==================== */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 16px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+    padding: 0 10px;
+    color: #a0aec0;
+    font-size: 12px;
 }
