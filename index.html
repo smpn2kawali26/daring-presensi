@@ -151,8 +151,9 @@
         
         .file-info { font-size: 11px; color: #888; margin-top: 5px; }
         .file-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .file-preview-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; position: relative; }
-        .file-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .file-preview-item { width: 80px; height: 80px; border-radius: 8px; overflow: hidden; position: relative; background: #f0f0f0; }
+        .file-preview-item img, .file-preview-item video { width: 100%; height: 100%; object-fit: cover; }
+        .file-preview-item .file-type-icon { position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; border-radius: 4px; padding: 2px 4px; font-size: 8px; }
         .remove-file {
             position: absolute;
             top: -6px;
@@ -166,6 +167,7 @@
             cursor: pointer;
             text-align: center;
             line-height: 18px;
+            z-index: 10;
         }
         hr { margin: 16px 0; border: none; border-top: 1px solid #eee; }
         .required { color: red; margin-left: 3px; }
@@ -187,6 +189,25 @@
         .jam-status.open { background: #c6f6d5; color: #22543d; }
         .jam-status.closed { background: #fed7d7; color: #742a2a; }
         .jam-status.warning { background: #feebc8; color: #7b341e; }
+        
+        .file-type-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .file-type-btn {
+            flex: 1;
+            background: #e0e0e0;
+            color: #333;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .file-type-btn.active {
+            background: #1e3c72;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -274,10 +295,15 @@
                 <div id="cameraWarning" class="warning">⚠️ Foto wajah wajib diambil!</div>
             </div>
 
+            <!-- Upload Tugas dengan Pilihan File -->
             <div class="form-group" id="uploadBox" style="display:none;">
-                <label>📎 Upload Tugas (Max 5 foto) <span class="required">*</span></label>
-                <input type="file" id="fileTugas" accept="image/*" multiple>
-                <div class="file-info">Max 5 file, masing-masing max 2MB</div>
+                <label>📎 Upload Tugas (Max 5 file: foto + video) <span class="required">*</span></label>
+                <div class="file-type-select">
+                    <div class="file-type-btn" data-type="image">📷 Foto</div>
+                    <div class="file-type-btn" data-type="video">🎥 Video</div>
+                </div>
+                <input type="file" id="fileTugas" accept="image/*,video/*" multiple>
+                <div class="file-info">📎 Max 5 file (foto JPG/PNG atau video MP4), masing-masing max 5MB</div>
                 <div id="filePreview" class="file-preview"></div>
                 <div id="fileWarning" class="warning">⚠️ Minimal upload 1 file!</div>
             </div>
@@ -314,6 +340,7 @@
         let currentLocation = null;
         let selectedFiles = [];
         let currentFacing = 'user';
+        let currentFileType = 'image';
 
         // ==================== ATURAN JAM ABSEN ====================
         function isActivityAllowed(aktivitas) {
@@ -416,36 +443,26 @@
             this.src = 'https://via.placeholder.com/70?text=SMPN2';
         };
 
-        // ==================== LOAD STATISTIK ====================
-        async function loadStatsFromSheet() {
+        // ==================== LOAD STATISTIK (JSONP) ====================
+        function loadStatsFromSheet() {
             const container = document.getElementById('kelasStats');
             container.innerHTML = '<div class="loading-stats"><i class="fas fa-spinner fa-spin"></i> Memuat statistik...</div>';
             
-            try {
-                // Gunakan mode 'cors' agar bisa membaca response
-                const response = await fetch(`${API_URL}?action=getStats`, {
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
+            // Gunakan JSONP untuk mengatasi CORS
+            const callbackName = 'jsonp_callback_' + Date.now();
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.head.removeChild(script);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('Data dari server:', data);
+                console.log('Data statistik:', data);
                 
                 if (data.total && data.kelas) {
-                    // Update total
                     document.getElementById('totalMasuk').innerText = data.total.masuk || 0;
                     document.getElementById('totalPulang').innerText = data.total.pulang || 0;
                     document.getElementById('totalIzin').innerText = data.total.izin || 0;
                     document.getElementById('totalSakit').innerText = data.total.sakit || 0;
                     document.getElementById('totalTugas').innerText = data.total.tugas || 0;
                     
-                    // Update per kelas
                     container.innerHTML = '';
                     const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
                     
@@ -467,23 +484,48 @@
                     }
                 } else {
                     container.innerHTML = '<div class="loading-stats">Belum ada data presensi hari ini</div>';
-                    // Tetap set total ke 0
                     document.getElementById('totalMasuk').innerText = '0';
                     document.getElementById('totalPulang').innerText = '0';
                     document.getElementById('totalIzin').innerText = '0';
                     document.getElementById('totalSakit').innerText = '0';
                     document.getElementById('totalTugas').innerText = '0';
                 }
-            } catch (error) {
-                console.error('Error detail:', error);
-                container.innerHTML = `<div class="loading-stats">Gagal memuat statistik: ${error.message}<br>Silakan refresh halaman.</div>`;
-            }
+            };
+            
+            const script = document.createElement('script');
+            script.src = `${API_URL}?action=getStats&callback=${callbackName}&t=${Date.now()}`;
+            document.head.appendChild(script);
+            
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                    container.innerHTML = '<div class="loading-stats">Gagal memuat statistik. Periksa koneksi internet.</div>';
+                }
+            }, 10000);
         }
         
-        // Load pertama kali
         loadStatsFromSheet();
-        // Refresh setiap 30 detik
         setInterval(loadStatsFromSheet, 30000);
+
+        // ==================== FILE TYPE SELECTOR ====================
+        document.querySelectorAll('.file-type-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.file-type-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFileType = this.dataset.type;
+                const fileInput = document.getElementById('fileTugas');
+                if (currentFileType === 'image') {
+                    fileInput.accept = 'image/*';
+                } else {
+                    fileInput.accept = 'video/mp4,video/webm';
+                }
+                fileInput.value = '';
+                document.getElementById('filePreview').innerHTML = '';
+                selectedFiles = [];
+            });
+            if (btn.dataset.type === 'image') btn.classList.add('active');
+        });
 
         // ==================== SEMBUNYIKAN KAMERA AWAL ====================
         document.getElementById('cameraBox').style.display = 'none';
@@ -565,20 +607,38 @@
             selectedFiles = [];
             const preview = document.getElementById('filePreview');
             preview.innerHTML = '';
+            
             for (let i = 0; i < files.length; i++) {
-                if (files[i].size > 2 * 1024 * 1024) {
-                    alert(`File ${files[i].name} terlalu besar! Max 2MB`);
+                const file = files[i];
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`File ${file.name} terlalu besar! Max 5MB`);
                     continue;
                 }
-                selectedFiles.push(files[i]);
+                
+                // Validasi tipe file
+                if (currentFileType === 'image' && !file.type.startsWith('image/')) {
+                    alert(`File ${file.name} bukan foto! Silakan pilih file foto.`);
+                    continue;
+                }
+                if (currentFileType === 'video' && !file.type.startsWith('video/')) {
+                    alert(`File ${file.name} bukan video! Silakan pilih file video MP4.`);
+                    continue;
+                }
+                
+                selectedFiles.push({ file: file, type: currentFileType });
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const div = document.createElement('div');
                     div.className = 'file-preview-item';
-                    div.innerHTML = `<img src="${e.target.result}"><div class="remove-file" onclick="removeFile(${i})">×</div>`;
+                    if (currentFileType === 'image') {
+                        div.innerHTML = `<img src="${e.target.result}"><div class="remove-file" onclick="removeFile(${i})">×</div><div class="file-type-icon">📷</div>`;
+                    } else {
+                        div.innerHTML = `<video src="${e.target.result}"></video><div class="remove-file" onclick="removeFile(${i})">×</div><div class="file-type-icon">🎥</div>`;
+                    }
                     preview.appendChild(div);
                 };
-                reader.readAsDataURL(files[i]);
+                reader.readAsDataURL(file);
             }
             document.getElementById('fileWarning').style.display = 'none';
         };
@@ -586,7 +646,7 @@
         window.removeFile = function(index) {
             selectedFiles.splice(index, 1);
             const dt = new DataTransfer();
-            selectedFiles.forEach(f => dt.items.add(f));
+            selectedFiles.forEach(item => dt.items.add(item.file));
             document.getElementById('fileTugas').files = dt.files;
             document.getElementById('fileTugas').dispatchEvent(new Event('change'));
         };
@@ -640,6 +700,43 @@
             updateJamStatus();
         };
 
+        // ==================== KOMPRES GAMBAR ====================
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxSize = 1024;
+                        
+                        if (width > maxSize || height > maxSize) {
+                            if (width > height) {
+                                height = (height * maxSize) / width;
+                                width = maxSize;
+                            } else {
+                                width = (width * maxSize) / height;
+                                height = maxSize;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.6);
+                        resolve(compressed);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         // ==================== SUBMIT ====================
         document.getElementById('submitBtn').onclick = async function() {
             const nama = document.getElementById('nama').value.trim();
@@ -681,13 +778,19 @@
             try {
                 let tugasData = [];
                 if (aktivitas === 'Upload Tugas') {
-                    for (const file of selectedFiles) {
-                        const compressed = await new Promise(r => {
-                            const reader = new FileReader();
-                            reader.onload = e => r(e.target.result);
-                            reader.readAsDataURL(file);
-                        });
-                        tugasData.push(compressed);
+                    for (const item of selectedFiles) {
+                        let fileData;
+                        if (item.type === 'image') {
+                            fileData = await compressImage(item.file);
+                        } else {
+                            // Untuk video, kompress dengan mengurangi kualitas
+                            fileData = await new Promise(r => {
+                                const reader = new FileReader();
+                                reader.onload = e => r(e.target.result);
+                                reader.readAsDataURL(item.file);
+                            });
+                        }
+                        tugasData.push({ data: fileData, type: item.type });
                     }
                 }
                 
@@ -696,7 +799,8 @@
                     fotoData: capturedPhoto, 
                     tugasData, 
                     lokasi: currentLocation || {},
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    fileType: currentFileType
                 };
                 
                 await fetch(API_URL, { 
@@ -726,8 +830,6 @@
                 document.getElementById('mapelGroup').style.display = 'none';
                 
                 getLocation();
-                
-                // Refresh statistik setelah submit
                 setTimeout(loadStatsFromSheet, 2000);
                 
             } catch(e) { 
