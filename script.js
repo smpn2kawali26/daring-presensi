@@ -7,16 +7,6 @@ let currentLocation = null;
 let currentFacingMode = 'user';
 let selectedFiles = [];
 
-// Data statistik simulasi (akan terupdate dari backend)
-let statistikData = {
-    '7a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-    '7b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-    '7c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-    '8a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-    '8b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-    '8c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 }
-};
-
 // ==================== INISIALISASI ====================
 document.addEventListener('DOMContentLoaded', function() {
     updateDateTime();
@@ -37,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
             }
-        } else if (aktivitas === 'Absen Masuk' || aktivitas === 'Absen Pulang' || aktivitas === 'Izin') {
+        } else if (aktivitas === 'Absen Masuk' || aktivitas === 'Absen Pulang' || aktivitas === 'Izin' || aktivitas === 'Sakit') {
             cameraSection.style.display = 'block';
             cameraSelectGroup.style.display = 'block';
             uploadGroup.style.display = 'none';
@@ -47,6 +37,10 @@ document.addEventListener('DOMContentLoaded', function() {
             cameraSelectGroup.style.display = 'none';
             uploadGroup.style.display = 'none';
         }
+        
+        // Reset warning
+        document.getElementById('cameraWarning').style.display = 'none';
+        document.getElementById('fileWarning').style.display = 'none';
     });
     
     // Event listener pilihan kamera
@@ -63,23 +57,73 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listener multiple file
     document.getElementById('fileTugas').addEventListener('change', handleFileSelect);
     
-    // Load data dari localStorage (data sementara)
+    // Load statistik dari localStorage
     loadStatsFromLocal();
     
-    // Set refresh statistik setiap 30 detik
+    // Refresh statistik setiap 30 detik
     setInterval(refreshStats, 30000);
 });
 
-// ==================== CEK JAM OPERASIONAL ====================
-function isOperationalHour() {
+// ==================== VALIDASI WAKTU PER AKTIVITAS ====================
+function isActivityAllowed(aktivitas) {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const currentTime = hours * 60 + minutes;
-    const startTime = 6 * 60 + 45; // 06:45
-    const endTime = 14 * 60 + 0;   // 14:00
+    
+    let startTime, endTime;
+    
+    switch(aktivitas) {
+        case 'Absen Masuk':
+            startTime = 6 * 60;      // 06:00
+            endTime = 8 * 60;        // 08:00
+            break;
+        case 'Absen Pulang':
+            startTime = 11 * 60;     // 11:00
+            endTime = 14 * 60;       // 14:00
+            break;
+        case 'Izin':
+        case 'Sakit':
+            startTime = 6 * 60;      // 06:00
+            endTime = 14 * 60;       // 14:00
+            break;
+        case 'Upload Tugas':
+            startTime = 6 * 60;      // 06:00
+            endTime = 15 * 60;       // 15:00
+            break;
+        default:
+            return false;
+    }
     
     return currentTime >= startTime && currentTime <= endTime;
+}
+
+function getTimeRemaining(aktivitas) {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 60 + minutes;
+    
+    let endTime;
+    switch(aktivitas) {
+        case 'Absen Masuk': endTime = 8 * 60; break;
+        case 'Absen Pulang': endTime = 14 * 60; break;
+        case 'Izin':
+        case 'Sakit': endTime = 14 * 60; break;
+        case 'Upload Tugas': endTime = 15 * 60; break;
+        default: return 0;
+    }
+    
+    const remaining = endTime - currentTime;
+    if (remaining <= 0) return 0;
+    
+    const hoursRemaining = Math.floor(remaining / 60);
+    const minutesRemaining = remaining % 60;
+    
+    if (hoursRemaining > 0) {
+        return `${hoursRemaining} jam ${minutesRemaining} menit`;
+    }
+    return `${minutesRemaining} menit`;
 }
 
 function updateDateTime() {
@@ -89,12 +133,20 @@ function updateDateTime() {
     document.getElementById('time').innerHTML = now.toLocaleTimeString('id-ID');
     
     const statusDiv = document.getElementById('statusJam');
-    if (isOperationalHour()) {
-        statusDiv.innerHTML = '✅ Waktu Presensi: BUKA (06:45 - 14:00)';
-        statusDiv.className = 'jam-status open';
+    const aktivitas = document.getElementById('aktivitas').value;
+    
+    if (aktivitas && aktivitas !== '') {
+        if (isActivityAllowed(aktivitas)) {
+            const remaining = getTimeRemaining(aktivitas);
+            statusDiv.innerHTML = `✅ Waktu tersedia: ${remaining} lagi`;
+            statusDiv.className = 'jam-status open';
+        } else {
+            statusDiv.innerHTML = `⛔ Waktu untuk ${aktivitas} sudah habis!`;
+            statusDiv.className = 'jam-status closed';
+        }
     } else {
-        statusDiv.innerHTML = '⛔ Waktu Presensi: TUTUP (Buka 06:45 - 14:00)';
-        statusDiv.className = 'jam-status closed';
+        statusDiv.innerHTML = '📅 Pilih aktivitas terlebih dahulu';
+        statusDiv.className = 'jam-status warning';
     }
 }
 
@@ -116,13 +168,13 @@ async function startCamera() {
         video.srcObject = currentStream;
         video.setAttribute('playsinline', true);
         
-        // Reset tampilan
         document.getElementById('video').style.display = 'block';
         document.getElementById('canvas').style.display = 'none';
         document.getElementById('captureBtn').style.display = 'inline-block';
         document.getElementById('retakeBtn').style.display = 'none';
         document.getElementById('photoPreview').innerHTML = '';
         capturedPhoto = null;
+        document.getElementById('cameraWarning').style.display = 'none';
         
     } catch (err) {
         console.error('Camera error:', err);
@@ -142,11 +194,15 @@ function capturePhoto() {
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
     
+    if (!video.videoWidth || video.videoWidth === 0) {
+        alert('Kamera belum siap. Silakan tunggu.');
+        return;
+    }
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0);
     
-    // Kompress foto (kualitas 50% untuk ukuran kecil)
     capturedPhoto = canvas.toDataURL('image/jpeg', 0.5);
     
     const preview = document.getElementById('photoPreview');
@@ -156,6 +212,7 @@ function capturePhoto() {
     canvas.style.display = 'block';
     document.getElementById('captureBtn').style.display = 'none';
     document.getElementById('retakeBtn').style.display = 'inline-block';
+    document.getElementById('cameraWarning').style.display = 'none';
     
     if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
@@ -203,238 +260,11 @@ function handleFileSelect(event) {
         };
         reader.readAsDataURL(file);
     }
+    
+    document.getElementById('fileWarning').style.display = 'none';
 }
 
 function removeFile(index) {
-    selectedFiles.splice(index, 1);
-    handleFileSelect({ target: { files: selectedFiles, value: '' } });
-}
-
-// ==================== GPS ====================
-function getLocationOnly() {
-    const gpsDiv = document.getElementById('gpsStatus');
-    if (!navigator.geolocation) {
-        gpsDiv.innerHTML = '⚠️ GPS tidak didukung';
-        return;
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-        function(pos) {
-            currentLocation = {
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-                accuracy: Math.round(pos.coords.accuracy)
-            };
-            gpsDiv.innerHTML = `✅ Lokasi tercatat: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)} (Akurasi: ${currentLocation.accuracy}m)`;
-            gpsDiv.className = 'gps-status gps-success';
-        },
-        function() {
-            gpsDiv.innerHTML = '⚠️ Izin lokasi ditolak, lokasi tidak akan tercatat';
-            gpsDiv.className = 'gps-status gps-error';
-            currentLocation = { lat: 0, lng: 0, accuracy: 0 };
-        }
-    );
-}
-
-// ==================== SUBMIT ====================
-async function submitForm() {
-    // Cek jam operasional
-    if (!isOperationalHour()) {
-        alert('⛔ Maaf, presensi hanya dapat diisi pada pukul 06:45 - 14:00');
-        return;
-    }
-    
-    const nama = document.getElementById('nama').value.trim();
-    const kelas = document.getElementById('kelas').value;
-    const aktivitas = document.getElementById('aktivitas').value;
-    
-    if (!nama || !kelas || !aktivitas) {
-        alert('❌ Harap lengkapi semua data!');
-        return;
-    }
-    
-    // Validasi untuk aktivitas yang butuh foto wajah
-    if ((aktivitas === 'Absen Masuk' || aktivitas === 'Absen Pulang' || aktivitas === 'Izin') && !capturedPhoto) {
-        alert('❌ Harap ambil foto wajah terlebih dahulu!');
-        return;
-    }
-    
-    // Validasi upload tugas
-    if (aktivitas === 'Upload Tugas' && selectedFiles.length === 0) {
-        alert('❌ Harap pilih file tugas!');
-        return;
-    }
-    
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.innerHTML = '⏳ Mengirim...';
-    
-    try {
-        let tugasDataArray = [];
-        
-        // Proses upload multiple file
-        if (aktivitas === 'Upload Tugas') {
-            for (const file of selectedFiles) {
-                const compressed = await compressImage(file);
-                tugasDataArray.push(compressed);
-            }
-        }
-        
-        const data = {
-            nama: nama,
-            kelas: kelas,
-            aktivitas: aktivitas,
-            fotoData: capturedPhoto,
-            tugasData: tugasDataArray,
-            lokasi: currentLocation || { lat: 0, lng: 0, accuracy: 0 },
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-        };
-        
-        await fetch(API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        
-        // Update statistik lokal
-        updateLocalStats(kelas, aktivitas);
-        
-        alert('✅ Data berhasil dikirim!');
-        
-        // Reset form
-        document.getElementById('nama').value = '';
-        document.getElementById('kelas').value = '';
-        document.getElementById('aktivitas').value = '';
-        document.getElementById('fileTugas').value = '';
-        document.getElementById('filePreview').innerHTML = '';
-        selectedFiles = [];
-        
-        if (capturedPhoto) {
-            retakePhoto();
-        }
-        
-        getLocationOnly();
-        
-    } catch (error) {
-        alert('❌ Gagal mengirim: ' + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '📤 KIRIM SEKARANG';
-    }
-}
-
-// Update statistik lokal
-function updateLocalStats(kelas, aktivitas) {
-    const today = new Date().toLocaleDateString('id-ID');
-    let stats = JSON.parse(localStorage.getItem('presensi_stats_' + today)) || {};
-    
-    if (!stats[kelas]) {
-        stats[kelas] = { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 };
-    }
-    
-    if (aktivitas === 'Absen Masuk') stats[kelas].absenMasuk++;
-    else if (aktivitas === 'Absen Pulang') stats[kelas].absenPulang++;
-    else if (aktivitas === 'Izin') stats[kelas].izin++;
-    else if (aktivitas === 'Upload Tugas') stats[kelas].tugas++;
-    
-    localStorage.setItem('presensi_stats_' + today, JSON.stringify(stats));
-    
-    // Refresh tampilan statistik
-    loadStatsFromLocal();
-}
-
-// Load statistik dari localStorage
-function loadStatsFromLocal() {
-    const today = new Date().toLocaleDateString('id-ID');
-    const stats = JSON.parse(localStorage.getItem('presensi_stats_' + today)) || {};
-    
-    let totalMasuk = 0, totalPulang = 0, totalIzin = 0, totalTugas = 0;
-    const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
-    
-    for (const kelas of kelasList) {
-        const data = stats[kelas] || { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 };
-        totalMasuk += data.absenMasuk;
-        totalPulang += data.absenPulang;
-        totalIzin += data.izin;
-        totalTugas += data.tugas;
-        
-        // Update tampilan per kelas
-        const kelasContainer = document.getElementById('kelasStats');
-        if (kelasContainer) {
-            const items = kelasContainer.querySelectorAll('.kelas-item');
-            for (const item of items) {
-                const nameSpan = item.querySelector('.kelas-name');
-                if (nameSpan && nameSpan.innerText.toUpperCase() === kelas.toUpperCase()) {
-                    const countsDiv = item.querySelector('.kelas-counts');
-                    if (countsDiv) {
-                        countsDiv.innerHTML = `
-                            <span>📥 ${data.absenMasuk}</span>
-                            <span>🏠 ${data.absenPulang}</span>
-                            <span>📝 ${data.izin}</span>
-                            <span>📄 ${data.tugas}</span>
-                        `;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    
-    // Update total
-    document.getElementById('totalMasuk').innerText = totalMasuk;
-    document.getElementById('totalPulang').innerText = totalPulang;
-    document.getElementById('totalIzin').innerText = totalIzin;
-    document.getElementById('totalTugas').innerText = totalTugas;
-}
-
-function refreshStats() {
-    loadStatsFromLocal();
-}
-
-// Kompres gambar untuk upload tugas
-function compressImage(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                
-                // Resize jika terlalu besar (max 1024px)
-                const maxSize = 1024;
-                if (width > maxSize || height > maxSize) {
-                    if (width > height) {
-                        height = (height * maxSize) / width;
-                        width = maxSize;
-                    } else {
-                        width = (width * maxSize) / height;
-                        height = maxSize;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // Kompress ke JPEG quality 60%
-                const compressed = canvas.toDataURL('image/jpeg', 0.6);
-                resolve(compressed);
-            };
-            img.onerror = reject;
-            img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// Fungsi global untuk remove file
-window.removeFile = function(index) {
     selectedFiles.splice(index, 1);
     const previewContainer = document.getElementById('filePreview');
     if (previewContainer) {
@@ -453,6 +283,7 @@ window.removeFile = function(index) {
             reader.readAsDataURL(selectedFiles[i]);
         }
     }
+    
     const fileInput = document.getElementById('fileTugas');
     if (fileInput) {
         const dt = new DataTransfer();
@@ -461,4 +292,3 @@ window.removeFile = function(index) {
         }
         fileInput.files = dt.files;
     }
-};
