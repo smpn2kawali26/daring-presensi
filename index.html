@@ -326,21 +326,21 @@
             
             switch(aktivitas) {
                 case 'Absen Masuk':
-                    startTime = 6 * 60;      // 06:00
-                    endTime = 8 * 60 + 15;   // 08:15
+                    startTime = 6 * 60;
+                    endTime = 8 * 60 + 15;
                     break;
                 case 'Absen Pulang':
-                    startTime = 11 * 60;     // 11:00
-                    endTime = 14 * 60;       // 14:00
+                    startTime = 11 * 60;
+                    endTime = 14 * 60;
                     break;
                 case 'Izin':
                 case 'Sakit':
-                    startTime = 6 * 60;      // 06:00
-                    endTime = 8 * 60;        // 08:00
+                    startTime = 6 * 60;
+                    endTime = 8 * 60;
                     break;
                 case 'Upload Tugas':
-                    startTime = 7 * 60;      // 07:00
-                    endTime = 15 * 60;       // 15:00
+                    startTime = 7 * 60;
+                    endTime = 15 * 60;
                     break;
                 default:
                     return false;
@@ -422,18 +422,30 @@
             container.innerHTML = '<div class="loading-stats"><i class="fas fa-spinner fa-spin"></i> Memuat statistik...</div>';
             
             try {
-                const response = await fetch(`${API_URL}?action=getStats`);
-                const data = await response.json();
+                // Gunakan mode 'cors' agar bisa membaca response
+                const response = await fetch(`${API_URL}?action=getStats`, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
-                console.log('Data statistik:', data);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data dari server:', data);
                 
                 if (data.total && data.kelas) {
+                    // Update total
                     document.getElementById('totalMasuk').innerText = data.total.masuk || 0;
                     document.getElementById('totalPulang').innerText = data.total.pulang || 0;
                     document.getElementById('totalIzin').innerText = data.total.izin || 0;
                     document.getElementById('totalSakit').innerText = data.total.sakit || 0;
                     document.getElementById('totalTugas').innerText = data.total.tugas || 0;
                     
+                    // Update per kelas
                     container.innerHTML = '';
                     const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
                     
@@ -455,14 +467,22 @@
                     }
                 } else {
                     container.innerHTML = '<div class="loading-stats">Belum ada data presensi hari ini</div>';
+                    // Tetap set total ke 0
+                    document.getElementById('totalMasuk').innerText = '0';
+                    document.getElementById('totalPulang').innerText = '0';
+                    document.getElementById('totalIzin').innerText = '0';
+                    document.getElementById('totalSakit').innerText = '0';
+                    document.getElementById('totalTugas').innerText = '0';
                 }
             } catch (error) {
-                console.error('Gagal memuat statistik:', error);
-                container.innerHTML = '<div class="loading-stats">Gagal memuat statistik. Silakan refresh halaman.</div>';
+                console.error('Error detail:', error);
+                container.innerHTML = `<div class="loading-stats">Gagal memuat statistik: ${error.message}<br>Silakan refresh halaman.</div>`;
             }
         }
         
+        // Load pertama kali
         loadStatsFromSheet();
+        // Refresh setiap 30 detik
         setInterval(loadStatsFromSheet, 30000);
 
         // ==================== SEMBUNYIKAN KAMERA AWAL ====================
@@ -597,125 +617,4 @@
             const cameraBox = document.getElementById('cameraBox');
             const cameraSelectGroup = document.getElementById('cameraSelectGroup');
             const uploadBox = document.getElementById('uploadBox');
-            const mapelGroup = document.getElementById('mapelGroup');
-            
-            cameraBox.style.display = 'none';
-            cameraSelectGroup.style.display = 'none';
-            uploadBox.style.display = 'none';
-            mapelGroup.style.display = 'none';
-            
-            if (currentStream) {
-                currentStream.getTracks().forEach(t => t.stop());
-            }
-            
-            if (val === 'Upload Tugas') {
-                uploadBox.style.display = 'block';
-                mapelGroup.style.display = 'block';
-            } else if (val === 'Absen Masuk' || val === 'Absen Pulang' || val === 'Izin' || val === 'Sakit') {
-                cameraBox.style.display = 'block';
-                cameraSelectGroup.style.display = 'block';
-                startCamera();
-            }
-            
-            updateJamStatus();
-        };
-
-        // ==================== SUBMIT ====================
-        document.getElementById('submitBtn').onclick = async function() {
-            const nama = document.getElementById('nama').value.trim();
-            const kelas = document.getElementById('kelas').value;
-            const aktivitas = document.getElementById('aktivitas').value;
-            const mapel = document.getElementById('mapel').value;
-            
-            if (!nama) { alert('❌ Nama lengkap wajib diisi!'); return; }
-            if (!kelas) { alert('❌ Kelas wajib dipilih!'); return; }
-            if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
-            
-            // Cek waktu
-            if (!isActivityAllowed(aktivitas)) {
-                alert(`⛔ Maaf, waktu untuk ${aktivitas} sudah habis!`);
-                return;
-            }
-            
-            if (aktivitas === 'Upload Tugas' && !mapel) {
-                alert('❌ Mata pelajaran wajib dipilih!');
-                return;
-            }
-            
-            const needPhoto = ['Absen Masuk', 'Absen Pulang', 'Izin', 'Sakit'];
-            if (needPhoto.includes(aktivitas) && !capturedPhoto) {
-                document.getElementById('cameraWarning').style.display = 'block';
-                alert('❌ Foto wajah wajib diambil!');
-                return;
-            }
-            
-            if (aktivitas === 'Upload Tugas' && selectedFiles.length === 0) {
-                document.getElementById('fileWarning').style.display = 'block';
-                alert('❌ Minimal upload 1 file tugas!');
-                return;
-            }
-            
-            const btn = this;
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Mengirim...';
-            
-            try {
-                let tugasData = [];
-                if (aktivitas === 'Upload Tugas') {
-                    for (const file of selectedFiles) {
-                        const compressed = await new Promise(r => {
-                            const reader = new FileReader();
-                            reader.onload = e => r(e.target.result);
-                            reader.readAsDataURL(file);
-                        });
-                        tugasData.push(compressed);
-                    }
-                }
-                
-                const data = { 
-                    nama, kelas, aktivitas, mapel: mapel || '',
-                    fotoData: capturedPhoto, 
-                    tugasData, 
-                    lokasi: currentLocation || {},
-                    timestamp: new Date().toISOString()
-                };
-                
-                await fetch(API_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    body: JSON.stringify(data), 
-                    headers: { 'Content-Type': 'application/json' } 
-                });
-                
-                alert('✅ Data berhasil dikirim!');
-                
-                document.getElementById('nama').value = '';
-                document.getElementById('kelas').value = '';
-                document.getElementById('aktivitas').value = '';
-                document.getElementById('mapel').value = '';
-                document.getElementById('fileTugas').value = '';
-                document.getElementById('filePreview').innerHTML = '';
-                selectedFiles = [];
-                
-                if (capturedPhoto) {
-                    document.getElementById('retakeBtn').click();
-                }
-                
-                document.getElementById('cameraBox').style.display = 'none';
-                document.getElementById('cameraSelectGroup').style.display = 'none';
-                document.getElementById('uploadBox').style.display = 'none';
-                document.getElementById('mapelGroup').style.display = 'none';
-                
-                getLocation();
-                loadStatsFromSheet();
-                
-            } catch(e) { 
-                alert('❌ Gagal: ' + e.message); 
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '📤 KIRIM SEKARANG';
-            }
-        };
-    </script>
-</body>
-</html>
+            const mapelGroup =
