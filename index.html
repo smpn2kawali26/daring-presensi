@@ -251,6 +251,7 @@
                     <option value="Seni Budaya">🎨 Seni Budaya</option>
                     <option value="Prakarya">🛠️ Prakarya</option>
                     <option value="Informatika">💻 Informatika</option>
+                    <option value="Coding">💻 Coding</option>
                 </select>
             </div>
 
@@ -348,7 +349,7 @@
                 const response = await fetch(`${API_URL}?action=getStats`);
                 const data = await response.json();
                 
-                console.log('Data statistik:', data); // Debug
+                console.log('Data statistik:', data);
                 
                 if (data.total && data.kelas) {
                     document.getElementById('totalMasuk').innerText = data.total.masuk || 0;
