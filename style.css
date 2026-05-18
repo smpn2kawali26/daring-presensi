@@ -35,7 +35,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* Logo Placeholder */
 .logo-placeholder {
     width: 60px;
     height: 60px;
@@ -104,6 +103,11 @@ body {
     color: #742a2a;
 }
 
+.jam-status.warning {
+    background: #feebc8;
+    color: #7b341e;
+}
+
 /* ==================== CARD ==================== */
 .card {
     background: white;
@@ -139,6 +143,11 @@ label {
     font-size: 14px;
 }
 
+.required {
+    color: #f56565;
+    margin-left: 4px;
+}
+
 input, select {
     width: 100%;
     padding: 12px 14px;
@@ -153,6 +162,18 @@ input:focus, select:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+}
+
+input.error, select.error {
+    border-color: #f56565;
+    background: #fff5f5;
+}
+
+.warning-text {
+    color: #f56565;
+    font-size: 12px;
+    margin-top: 5px;
+    text-align: center;
 }
 
 /* ==================== KAMERA ==================== */
@@ -200,7 +221,7 @@ input:focus, select:focus {
     border-radius: 12px;
     margin: 0 auto;
     display: block;
-    border: 3px solid #667eea;
+    border: 3px solid #48bb78;
 }
 
 /* ==================== BUTTON ==================== */
@@ -303,27 +324,27 @@ button:disabled {
 /* ==================== STATISTIK ==================== */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
     margin-bottom: 20px;
 }
 
 .stat-item {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 12px 8px;
-    border-radius: 16px;
+    padding: 10px 4px;
+    border-radius: 12px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .stat-value {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 800;
 }
 
 .stat-label {
-    font-size: 10px;
+    font-size: 9px;
     opacity: 0.9;
     margin-top: 4px;
 }
@@ -333,7 +354,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 300px;
+    max-height: 350px;
     overflow-y: auto;
 }
 
@@ -360,19 +381,17 @@ button:disabled {
 
 .kelas-counts {
     display: flex;
-    gap: 12px;
-    font-size: 12px;
+    gap: 10px;
+    font-size: 11px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .kelas-counts span {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     color: #4a5568;
-}
-
-.kelas-counts span i {
-    font-size: 12px;
 }
 
 /* ==================== UPLOAD FILE ==================== */
@@ -391,8 +410,8 @@ button:disabled {
 
 .file-preview-item {
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -411,12 +430,12 @@ button:disabled {
     background: #f56565;
     color: white;
     border-radius: 50%;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s;
@@ -442,11 +461,11 @@ hr {
     }
     
     .stat-value {
-        font-size: 16px;
+        font-size: 14px;
     }
     
     .stat-label {
-        font-size: 9px;
+        font-size: 8px;
     }
     
     .time {
@@ -454,18 +473,16 @@ hr {
     }
     
     .kelas-counts {
-        gap: 8px;
-        font-size: 11px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        gap: 6px;
+        font-size: 10px;
     }
     
     .stats-grid {
-        gap: 8px;
+        gap: 6px;
     }
     
     .stat-item {
-        padding: 8px 4px;
+        padding: 6px 2px;
     }
     
     button {
@@ -478,13 +495,9 @@ hr {
         padding: 16px;
     }
     
-    .logo-placeholder {
+    .logo-placeholder, .logo-img {
         width: 50px;
         height: 50px;
-    }
-    
-    .logo-placeholder i {
-        font-size: 24px;
     }
 }
 
@@ -565,10 +578,6 @@ hr {
     cursor: pointer;
 }
 
-#cameraSelect option {
-    padding: 10px;
-}
-
 /* ==================== FILE INPUT ==================== */
 input[type="file"] {
     padding: 10px;
@@ -587,14 +596,10 @@ input[type="file"]::file-selector-button {
     font-family: inherit;
 }
 
-input[type="file"]::file-selector-button:hover {
-    opacity: 0.9;
-}
-
 /* ==================== BADGE ==================== */
 .badge {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 2px 6px;
     border-radius: 20px;
     font-size: 10px;
     font-weight: 600;
@@ -603,30 +608,4 @@ input[type="file"]::file-selector-button:hover {
 .badge-success {
     background: #c6f6d5;
     color: #22543d;
-}
-
-.badge-warning {
-    background: #feebc8;
-    color: #7b341e;
-}
-
-/* ==================== DIVIDER ==================== */
-.divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    margin: 16px 0;
-}
-
-.divider::before,
-.divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.divider span {
-    padding: 0 10px;
-    color: #a0aec0;
-    font-size: 12px;
 }
