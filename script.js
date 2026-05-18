@@ -7,19 +7,21 @@ let currentLocation = null;
 let currentFacingMode = 'user';
 let selectedFiles = [];
 
-// Logo dari Google Drive
-const logoImg = document.getElementById('logoImg');
-if (logoImg) {
-    logoImg.src = 'https://drive.google.com/uc?export=view&id=1nlVZtT1OQJKcX61ylMOkufbIE9x2MK6k';
-}
+// Data statistik simulasi (akan terupdate dari backend)
+let statistikData = {
+    '7a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+    '7b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+    '7c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+    '8a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+    '8b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
+    '8c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 }
+};
 
 // ==================== INISIALISASI ====================
 document.addEventListener('DOMContentLoaded', function() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
     getLocationOnly();
-    loadStats();
-    setInterval(loadStats, 30000);
     
     // Event listener aktivitas
     document.getElementById('aktivitas').addEventListener('change', function() {
@@ -60,6 +62,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listener multiple file
     document.getElementById('fileTugas').addEventListener('change', handleFileSelect);
+    
+    // Load data dari localStorage (data sementara)
+    loadStatsFromLocal();
+    
+    // Set refresh statistik setiap 30 detik
+    setInterval(refreshStats, 30000);
 });
 
 // ==================== CEK JAM OPERASIONAL ====================
@@ -186,14 +194,20 @@ function handleFileSelect(event) {
         reader.onload = function(e) {
             const div = document.createElement('div');
             div.className = 'file-preview-item';
+            div.setAttribute('data-index', i);
             div.innerHTML = `
                 <img src="${e.target.result}">
-                <div class="remove-file" data-index="${i}">×</div>
+                <div class="remove-file" onclick="removeFile(${i})">×</div>
             `;
             previewContainer.appendChild(div);
         };
         reader.readAsDataURL(file);
     }
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    handleFileSelect({ target: { files: selectedFiles, value: '' } });
 }
 
 // ==================== GPS ====================
@@ -284,6 +298,9 @@ async function submitForm() {
             body: JSON.stringify(data)
         });
         
+        // Update statistik lokal
+        updateLocalStats(kelas, aktivitas);
+        
         alert('✅ Data berhasil dikirim!');
         
         // Reset form
@@ -299,7 +316,6 @@ async function submitForm() {
         }
         
         getLocationOnly();
-        loadStats();
         
     } catch (error) {
         alert('❌ Gagal mengirim: ' + error.message);
@@ -309,7 +325,75 @@ async function submitForm() {
     }
 }
 
-// Kompress gambar untuk upload tugas
+// Update statistik lokal
+function updateLocalStats(kelas, aktivitas) {
+    const today = new Date().toLocaleDateString('id-ID');
+    let stats = JSON.parse(localStorage.getItem('presensi_stats_' + today)) || {};
+    
+    if (!stats[kelas]) {
+        stats[kelas] = { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 };
+    }
+    
+    if (aktivitas === 'Absen Masuk') stats[kelas].absenMasuk++;
+    else if (aktivitas === 'Absen Pulang') stats[kelas].absenPulang++;
+    else if (aktivitas === 'Izin') stats[kelas].izin++;
+    else if (aktivitas === 'Upload Tugas') stats[kelas].tugas++;
+    
+    localStorage.setItem('presensi_stats_' + today, JSON.stringify(stats));
+    
+    // Refresh tampilan statistik
+    loadStatsFromLocal();
+}
+
+// Load statistik dari localStorage
+function loadStatsFromLocal() {
+    const today = new Date().toLocaleDateString('id-ID');
+    const stats = JSON.parse(localStorage.getItem('presensi_stats_' + today)) || {};
+    
+    let totalMasuk = 0, totalPulang = 0, totalIzin = 0, totalTugas = 0;
+    const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
+    
+    for (const kelas of kelasList) {
+        const data = stats[kelas] || { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 };
+        totalMasuk += data.absenMasuk;
+        totalPulang += data.absenPulang;
+        totalIzin += data.izin;
+        totalTugas += data.tugas;
+        
+        // Update tampilan per kelas
+        const kelasContainer = document.getElementById('kelasStats');
+        if (kelasContainer) {
+            const items = kelasContainer.querySelectorAll('.kelas-item');
+            for (const item of items) {
+                const nameSpan = item.querySelector('.kelas-name');
+                if (nameSpan && nameSpan.innerText.toUpperCase() === kelas.toUpperCase()) {
+                    const countsDiv = item.querySelector('.kelas-counts');
+                    if (countsDiv) {
+                        countsDiv.innerHTML = `
+                            <span>📥 ${data.absenMasuk}</span>
+                            <span>🏠 ${data.absenPulang}</span>
+                            <span>📝 ${data.izin}</span>
+                            <span>📄 ${data.tugas}</span>
+                        `;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Update total
+    document.getElementById('totalMasuk').innerText = totalMasuk;
+    document.getElementById('totalPulang').innerText = totalPulang;
+    document.getElementById('totalIzin').innerText = totalIzin;
+    document.getElementById('totalTugas').innerText = totalTugas;
+}
+
+function refreshStats() {
+    loadStatsFromLocal();
+}
+
+// Kompres gambar untuk upload tugas
 function compressImage(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -349,61 +433,32 @@ function compressImage(file) {
     });
 }
 
-// ==================== STATISTIK ====================
-async function loadStats() {
-    try {
-        const response = await fetch(`${API_URL}?action=getStats`);
-        // Karena mode no-cors, kita tampilkan data dummy dulu
-        // Data real akan diupdate dari backend nanti
-        
-        // Contoh data statistik per kelas
-        updateKelasStats({
-            '7a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-            '7b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-            '7c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-            '8a': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-            '8b': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 },
-            '8c': { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 }
-        });
-        
-    } catch (error) {
-        console.error('Error loading stats:', error);
+// Fungsi global untuk remove file
+window.removeFile = function(index) {
+    selectedFiles.splice(index, 1);
+    const previewContainer = document.getElementById('filePreview');
+    if (previewContainer) {
+        previewContainer.innerHTML = '';
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'file-preview-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}">
+                    <div class="remove-file" onclick="removeFile(${i})">×</div>
+                `;
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(selectedFiles[i]);
+        }
     }
-}
-
-function updateKelasStats(kelasStats) {
-    const container = document.getElementById('kelasStats');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
-    
-    // Update total keseluruhan
-    let totalMasuk = 0, totalPulang = 0, totalIzin = 0, totalTugas = 0;
-    
-    for (const kelas of kelasList) {
-        const data = kelasStats[kelas] || { absenMasuk: 0, absenPulang: 0, izin: 0, tugas: 0 };
-        totalMasuk += data.absenMasuk;
-        totalPulang += data.absenPulang;
-        totalIzin += data.izin;
-        totalTugas += data.tugas;
-        
-        const div = document.createElement('div');
-        div.className = 'kelas-item';
-        div.innerHTML = `
-            <span class="kelas-name">${kelas.toUpperCase()}</span>
-            <div class="kelas-counts">
-                <span>📥 ${data.absenMasuk}</span>
-                <span>🏠 ${data.absenPulang}</span>
-                <span>📝 ${data.izin}</span>
-                <span>📄 ${data.tugas}</span>
-            </div>
-        `;
-        container.appendChild(div);
+    const fileInput = document.getElementById('fileTugas');
+    if (fileInput) {
+        const dt = new DataTransfer();
+        for (const file of selectedFiles) {
+            dt.items.add(file);
+        }
+        fileInput.files = dt.files;
     }
-    
-    document.getElementById('totalMasuk').innerText = totalMasuk;
-    document.getElementById('totalPulang').innerText = totalPulang;
-    document.getElementById('totalIzin').innerText = totalIzin;
-    document.getElementById('totalTugas').innerText = totalTugas;
-}
+};
