@@ -2,160 +2,549 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>SMPN 2 KAWALI - Presensi Daring</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .container { max-width: 500px; margin: 0 auto; }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .logo-img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+        .school-info h1 { font-size: 20px; color: #1e3c72; }
+        .school-info p { font-size: 12px; color: #666; }
+        .datetime {
+            background: #f0f4ff;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+        .date { font-size: 14px; color: #555; }
+        .time { font-size: 28px; font-weight: bold; color: #1e3c72; }
+        
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1e3c72;
+        }
+        
+        /* Form */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        input:focus, select:focus { border-color: #1e3c72; outline: none; }
+        
+        /* Camera */
+        .camera-box {
+            background: #f5f5f5;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+        }
+        .video-wrapper {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        video, canvas {
+            width: 100%;
+            max-height: 280px;
+            display: block;
+        }
+        canvas { display: none; }
+        .preview-img { width: 100%; max-width: 180px; border-radius: 12px; margin-top: 10px; }
+        
+        /* Buttons */
+        .btn-group { display: flex; gap: 10px; margin-top: 12px; }
+        button {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        .btn-success { background: #2e7d32; }
+        .btn-danger { background: #c62828; }
+        .submit-btn {
+            width: 100%;
+            background: #2e7d32;
+            padding: 14px;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+        
+        /* Status */
+        .gps-status {
+            padding: 12px;
+            border-radius: 12px;
+            margin: 12px 0;
+            font-size: 13px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .gps-error { background: #ffebee; color: #c62828; }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-number { font-size: 20px; font-weight: bold; }
+        .stat-label { font-size: 10px; }
+        
+        /* Kelas Stats */
+        .kelas-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .kelas-name { font-weight: 700; width: 45px; }
+        .kelas-counts { display: flex; gap: 12px; font-size: 12px; }
+        .file-info { font-size: 11px; color: #888; margin-top: 5px; }
+        .file-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .file-preview-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; position: relative; }
+        .file-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .remove-file {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: red;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        hr { margin: 16px 0; border: none; border-top: 1px solid #eee; }
+        .required { color: red; margin-left: 3px; }
+        .warning { color: red; font-size: 12px; margin-top: 5px; display: none; }
+    </style>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo-section">
-                <img class="logo-img" id="logoImg" alt="Logo Sekolah" src="logo.png" onerror="this.style.display='none'; this.nextSibling.style.display='flex';">
-                <div class="logo-placeholder" style="display:none;">
-                    <i class="fas fa-school"></i>
-                </div>
-                <div class="school-info">
-                    <h1>SMPN 2 KAWALI</h1>
-                    <p>Sistem Presensi Daring & Upload Tugas</p>
-                </div>
+            <img class="logo-img" id="logoImg" alt="Logo" src="logo.png" onerror="this.src='https://via.placeholder.com/70?text=LOGO'">
+            <div class="school-info">
+                <h1>SMPN 2 KAWALI</h1>
+                <p>Sistem Presensi Daring & Upload Tugas</p>
             </div>
             <div class="datetime">
                 <div class="date" id="date"></div>
                 <div class="time" id="time"></div>
-                <div id="statusJam" class="jam-status"></div>
             </div>
         </div>
 
         <!-- Form -->
         <div class="card">
-            <div class="card-title">
-                <i class="fas fa-edit"></i> Form Presensi
-            </div>
+            <div class="card-title"><i class="fas fa-edit"></i> Form Presensi</div>
             
             <div class="form-group">
-                <label><i class="fas fa-user"></i> Nama Lengkap <span class="required">*</span></label>
-                <input type="text" id="nama" required placeholder="Masukkan nama lengkap">
+                <label>Nama Lengkap <span class="required">*</span></label>
+                <input type="text" id="nama" placeholder="Masukkan nama lengkap">
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-users"></i> Kelas <span class="required">*</span></label>
-                <select id="kelas" required>
+                <label>Kelas <span class="required">*</span></label>
+                <select id="kelas">
                     <option value="">Pilih Kelas</option>
-                    <option value="7a">7A</option>
-                    <option value="7b">7B</option>
-                    <option value="7c">7C</option>
-                    <option value="8a">8A</option>
-                    <option value="8b">8B</option>
-                    <option value="8c">8C</option>
+                    <option value="7a">7A</option><option value="7b">7B</option><option value="7c">7C</option>
+                    <option value="8a">8A</option><option value="8b">8B</option><option value="8c">8C</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-calendar-check"></i> Aktivitas <span class="required">*</span></label>
-                <select id="aktivitas" required>
+                <label>Aktivitas <span class="required">*</span></label>
+                <select id="aktivitas">
                     <option value="">Pilih Aktivitas</option>
-                    <option value="Absen Masuk">✅ Absen Masuk (06:00 - 08:00)</option>
-                    <option value="Absen Pulang">🏠 Absen Pulang (11:00 - 14:00)</option>
-                    <option value="Izin">📝 Izin (06:00 - 14:00)</option>
-                    <option value="Sakit">🤒 Sakit (06:00 - 14:00)</option>
-                    <option value="Upload Tugas">📤 Upload Tugas (06:00 - 15:00)</option>
-                </select>
-            </div>
-
-            <!-- Pilihan Kamera -->
-            <div class="form-group" id="cameraSelectGroup" style="display:none;">
-                <label><i class="fas fa-camera-retro"></i> Pilih Kamera</label>
-                <select id="cameraSelect">
-                    <option value="user">Kamera Depan</option>
-                    <option value="environment">Kamera Belakang</option>
+                    <option value="Absen Masuk">✅ Absen Masuk</option>
+                    <option value="Absen Pulang">🏠 Absen Pulang</option>
+                    <option value="Izin">📝 Izin</option>
+                    <option value="Sakit">🤒 Sakit</option>
+                    <option value="Upload Tugas">📤 Upload Tugas</option>
                 </select>
             </div>
 
             <!-- Camera Section -->
-            <div class="camera-container" id="cameraSection" style="display:none;">
-                <label><i class="fas fa-camera"></i> Scan Wajah <span class="required">*</span></label>
+            <div class="camera-box" id="cameraBox">
+                <label>📸 Scan Wajah <span class="required">*</span></label>
                 <div class="video-wrapper">
                     <video id="video" autoplay playsinline muted></video>
                     <canvas id="canvas"></canvas>
                 </div>
                 <div class="btn-group">
-                    <button type="button" id="captureBtn" class="btn-secondary">
-                        <i class="fas fa-camera"></i> Ambil Gambar
-                    </button>
-                    <button type="button" id="retakeBtn" style="display:none;" class="btn-danger">
-                        <i class="fas fa-redo"></i> Ambil Ulang
-                    </button>
+                    <button type="button" id="captureBtn" class="btn-success">📷 Ambil Gambar</button>
+                    <button type="button" id="retakeBtn" style="display:none;" class="btn-danger">🔄 Ambil Ulang</button>
                 </div>
-                <div id="photoPreview" class="photo-preview"></div>
-                <div id="cameraWarning" class="warning-text" style="display:none;">⚠️ Wajib ambil foto!</div>
+                <div id="preview"></div>
+                <div id="cameraWarning" class="warning">⚠️ Foto wajah wajib diambil!</div>
             </div>
 
-            <!-- Upload Tugas Multiple -->
-            <div class="form-group" id="uploadTugasGroup" style="display:none;">
-                <label><i class="fas fa-upload"></i> Upload Tugas (Max 5 Foto) <span class="required">*</span></label>
-                <input type="file" id="fileTugas" accept="image/jpeg,image/png,image/jpg" multiple>
-                <div class="file-info">📎 Max 5 file, masing-masing max 2MB, format JPG/PNG</div>
+            <!-- Upload Tugas -->
+            <div class="form-group" id="uploadBox" style="display:none;">
+                <label>📎 Upload Tugas (Max 5 foto) <span class="required">*</span></label>
+                <input type="file" id="fileTugas" accept="image/*" multiple>
+                <div class="file-info">Max 5 file, masing-masing max 2MB</div>
                 <div id="filePreview" class="file-preview"></div>
-                <div id="fileWarning" class="warning-text" style="display:none;">⚠️ Wajib upload minimal 1 file!</div>
+                <div id="fileWarning" class="warning">⚠️ Minimal upload 1 file!</div>
             </div>
 
-            <!-- GPS Status -->
-            <div id="gpsStatus" class="gps-status">
-                <i class="fas fa-map-marker-alt"></i> Mengambil lokasi...
-            </div>
+            <!-- GPS -->
+            <div id="gpsStatus" class="gps-status">📍 Mengambil lokasi...</div>
 
-            <button type="submit" id="submitBtn" class="submit-btn">
-                <i class="fas fa-paper-plane"></i> KIRIM SEKARANG
-            </button>
+            <button id="submitBtn" class="submit-btn">📤 KIRIM SEKARANG</button>
         </div>
 
         <!-- Statistik -->
         <div class="card">
-            <div class="card-title">
-                <i class="fas fa-chart-line"></i> Total Absensi Hari Ini
-            </div>
+            <div class="card-title">📊 Total Absensi Hari Ini</div>
             <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="totalMasuk">0</div>
-                    <div class="stat-label">Absen Masuk</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalPulang">0</div>
-                    <div class="stat-label">Absen Pulang</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalIzin">0</div>
-                    <div class="stat-label">Izin</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalSakit">0</div>
-                    <div class="stat-label">Sakit</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="totalTugas">0</div>
-                    <div class="stat-label">Upload Tugas</div>
-                </div>
+                <div class="stat-card"><div class="stat-number" id="totalMasuk">0</div><div class="stat-label">Masuk</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalPulang">0</div><div class="stat-label">Pulang</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalIzin">0</div><div class="stat-label">Izin</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalSakit">0</div><div class="stat-label">Sakit</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalTugas">0</div><div class="stat-label">Tugas</div></div>
             </div>
-
             <hr>
-
-            <div class="card-title">
-                <i class="fas fa-chart-bar"></i> Statistik Per Kelas (Hari Ini)
-            </div>
-            <div id="kelasStats" class="kelas-list">
-                <div class="kelas-item"><span class="kelas-name">7A</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">7B</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">7C</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">8A</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">8B</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
-                <div class="kelas-item"><span class="kelas-name">8C</span><div class="kelas-counts"><span>📥 0</span><span>🏠 0</span><span>📝 0</span><span>🤒 0</span><span>📄 0</span></div></div>
-            </div>
+            <div class="card-title">📊 Statistik Per Kelas</div>
+            <div id="kelasStats"></div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // ==================== KONFIGURASI ====================
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxcw0J59ojWkJxQJKRgn8UmNLHee1qwyAmMCR3oU2DmveaqjHDXP8_lryRlJV0cJrljBQ/exec';
+        
+        let currentStream = null;
+        let capturedPhoto = null;
+        let currentLocation = null;
+        let selectedFiles = [];
+
+        // ==================== TAMPILAN WAKTU ====================
+        function updateDateTime() {
+            const now = new Date();
+            const hari = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const waktu = now.toLocaleTimeString('id-ID');
+            document.getElementById('date').innerHTML = hari;
+            document.getElementById('time').innerHTML = waktu;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // ==================== LOGO ====================
+        const logo = document.getElementById('logoImg');
+        logo.src = 'https://drive.google.com/uc?export=view&id=1nlVZtT1OQJKcX61ylMOkufbIE9x2MK6k';
+        logo.onerror = function() { this.src = 'https://via.placeholder.com/70?text=LOGO'; };
+
+        // ==================== KAMERA ====================
+        async function startCamera() {
+            try {
+                if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+                currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('video').srcObject = currentStream;
+                document.getElementById('cameraWarning').style.display = 'none';
+            } catch(e) {
+                document.querySelector('.video-wrapper').innerHTML = '<div style="padding:20px;color:red;">⚠️ Izin kamera ditolak</div>';
+            }
+        }
+
+        document.getElementById('captureBtn').onclick = function() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            capturedPhoto = canvas.toDataURL('image/jpeg', 0.7);
+            document.getElementById('preview').innerHTML = `<img src="${capturedPhoto}" class="preview-img">`;
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+            this.style.display = 'none';
+            document.getElementById('retakeBtn').style.display = 'inline-block';
+            if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+            document.getElementById('cameraWarning').style.display = 'none';
+        };
+
+        document.getElementById('retakeBtn').onclick = function() {
+            capturedPhoto = null;
+            document.getElementById('video').style.display = 'block';
+            document.getElementById('canvas').style.display = 'none';
+            document.getElementById('captureBtn').style.display = 'inline-block';
+            this.style.display = 'none';
+            document.getElementById('preview').innerHTML = '';
+            startCamera();
+        };
+
+        // ==================== UPLOAD FILE ====================
+        document.getElementById('fileTugas').onchange = function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 5) {
+                alert('Maksimal 5 file!');
+                this.value = '';
+                return;
+            }
+            selectedFiles = [];
+            const preview = document.getElementById('filePreview');
+            preview.innerHTML = '';
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > 2 * 1024 * 1024) {
+                    alert(`File ${files[i].name} terlalu besar! Max 2MB`);
+                    continue;
+                }
+                selectedFiles.push(files[i]);
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'file-preview-item';
+                    div.innerHTML = `<img src="${e.target.result}"><div class="remove-file" onclick="removeFile(${i})">×</div>`;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(files[i]);
+            }
+            document.getElementById('fileWarning').style.display = 'none';
+        };
+
+        window.removeFile = function(index) {
+            selectedFiles.splice(index, 1);
+            const dt = new DataTransfer();
+            selectedFiles.forEach(f => dt.items.add(f));
+            document.getElementById('fileTugas').files = dt.files;
+            document.getElementById('fileTugas').dispatchEvent(new Event('change'));
+        };
+
+        // ==================== GPS ====================
+        function getLocation() {
+            if (!navigator.geolocation) {
+                document.getElementById('gpsStatus').innerHTML = '⚠️ GPS tidak didukung';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    document.getElementById('gpsStatus').innerHTML = `📍 Lokasi: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+                    document.getElementById('gpsStatus').className = 'gps-status';
+                },
+                () => {
+                    document.getElementById('gpsStatus').innerHTML = '⚠️ Izin lokasi ditolak';
+                    document.getElementById('gpsStatus').className = 'gps-status gps-error';
+                }
+            );
+        }
+        getLocation();
+
+        // ==================== TOGGLE FORM ====================
+        document.getElementById('aktivitas').onchange = function() {
+            const val = this.value;
+            const cameraBox = document.getElementById('cameraBox');
+            const uploadBox = document.getElementById('uploadBox');
+            if (val === 'Upload Tugas') {
+                cameraBox.style.display = 'none';
+                uploadBox.style.display = 'block';
+                if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+            } else if (val === 'Absen Masuk' || val === 'Absen Pulang' || val === 'Izin' || val === 'Sakit') {
+                cameraBox.style.display = 'block';
+                uploadBox.style.display = 'none';
+                startCamera();
+            } else {
+                cameraBox.style.display = 'block';
+                uploadBox.style.display = 'none';
+            }
+        };
+
+        // ==================== LOAD STATISTIK ====================
+        function loadStats() {
+            const today = new Date().toLocaleDateString('id-ID');
+            let stats = JSON.parse(localStorage.getItem('presensi_' + today)) || {
+                total: { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                kelas: {
+                    '7a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '7b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '7c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '8a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '8b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '8c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 }
+                }
+            };
+            
+            // Update total
+            document.getElementById('totalMasuk').innerText = stats.total.masuk;
+            document.getElementById('totalPulang').innerText = stats.total.pulang;
+            document.getElementById('totalIzin').innerText = stats.total.izin;
+            document.getElementById('totalSakit').innerText = stats.total.sakit;
+            document.getElementById('totalTugas').innerText = stats.total.tugas;
+            
+            // Update per kelas
+            const container = document.getElementById('kelasStats');
+            container.innerHTML = '';
+            const kelasList = ['7a', '7b', '7c', '8a', '8b', '8c'];
+            for (const k of kelasList) {
+                const d = stats.kelas[k];
+                const div = document.createElement('div');
+                div.className = 'kelas-item';
+                div.innerHTML = `
+                    <span class="kelas-name">${k.toUpperCase()}</span>
+                    <div class="kelas-counts">
+                        <span>📥 ${d.masuk}</span>
+                        <span>🏠 ${d.pulang}</span>
+                        <span>📝 ${d.izin}</span>
+                        <span>🤒 ${d.sakit}</span>
+                        <span>📄 ${d.tugas}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        }
+        
+        function updateStats(kelas, aktivitas) {
+            const today = new Date().toLocaleDateString('id-ID');
+            let stats = JSON.parse(localStorage.getItem('presensi_' + today)) || {
+                total: { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                kelas: {
+                    '7a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '7b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '7c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '8a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '8b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    '8c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 }
+                }
+            };
+            
+            let key = '';
+            if (aktivitas === 'Absen Masuk') key = 'masuk';
+            else if (aktivitas === 'Absen Pulang') key = 'pulang';
+            else if (aktivitas === 'Izin') key = 'izin';
+            else if (aktivitas === 'Sakit') key = 'sakit';
+            else if (aktivitas === 'Upload Tugas') key = 'tugas';
+            
+            if (key) {
+                stats.total[key]++;
+                if (stats.kelas[kelas]) stats.kelas[kelas][key]++;
+            }
+            
+            localStorage.setItem('presensi_' + today, JSON.stringify(stats));
+            loadStats();
+        }
+        
+        loadStats();
+
+        // ==================== SUBMIT ====================
+        document.getElementById('submitBtn').onclick = async function() {
+            const nama = document.getElementById('nama').value.trim();
+            const kelas = document.getElementById('kelas').value;
+            const aktivitas = document.getElementById('aktivitas').value;
+            
+            // Validasi
+            if (!nama) { alert('❌ Nama lengkap wajib diisi!'); return; }
+            if (!kelas) { alert('❌ Kelas wajib dipilih!'); return; }
+            if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
+            
+            // Validasi foto untuk aktivitas yang membutuhkan
+            const needPhoto = ['Absen Masuk', 'Absen Pulang', 'Izin', 'Sakit'];
+            if (needPhoto.includes(aktivitas) && !capturedPhoto) {
+                document.getElementById('cameraWarning').style.display = 'block';
+                alert('❌ Foto wajah wajib diambil!');
+                return;
+            }
+            
+            // Validasi upload tugas
+            if (aktivitas === 'Upload Tugas' && selectedFiles.length === 0) {
+                document.getElementById('fileWarning').style.display = 'block';
+                alert('❌ Minimal upload 1 file tugas!');
+                return;
+            }
+            
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Mengirim...';
+            
+            try {
+                let tugasData = [];
+                if (aktivitas === 'Upload Tugas') {
+                    for (const file of selectedFiles) {
+                        const compressed = await new Promise(r => {
+                            const reader = new FileReader();
+                            reader.onload = e => r(e.target.result);
+                            reader.readAsDataURL(file);
+                        });
+                        tugasData.push(compressed);
+                    }
+                }
+                
+                const data = { nama, kelas, aktivitas, fotoData: capturedPhoto, tugasData, lokasi: currentLocation || {} };
+                
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
+                
+                // Update statistik lokal
+                updateStats(kelas, aktivitas);
+                
+                alert('✅ Data berhasil dikirim!');
+                
+                // Reset form
+                document.getElementById('nama').value = '';
+                document.getElementById('kelas').value = '';
+                document.getElementById('aktivitas').value = '';
+                document.getElementById('fileTugas').value = '';
+                document.getElementById('filePreview').innerHTML = '';
+                selectedFiles = [];
+                if (capturedPhoto) document.getElementById('retakeBtn').click();
+                getLocation();
+                
+            } catch(e) { alert('❌ Gagal: ' + e.message); }
+            finally {
+                btn.disabled = false;
+                btn.innerHTML = '📤 KIRIM SEKARANG';
+            }
+        };
+        
+        // Start camera awal
+        startCamera();
+    </script>
 </body>
 </html>
