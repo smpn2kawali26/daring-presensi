@@ -29,6 +29,7 @@
             height: 70px;
             object-fit: contain;
             margin-bottom: 8px;
+            border-radius: 12px;
         }
         .school-info h1 { font-size: 20px; color: #1e3c72; }
         .school-info p { font-size: 12px; color: #666; }
@@ -89,7 +90,7 @@
         .preview-img { width: 100%; max-width: 180px; border-radius: 12px; margin-top: 10px; }
         
         /* Buttons */
-        .btn-group { display: flex; gap: 10px; margin-top: 12px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
         button {
             background: #1e3c72;
             color: white;
@@ -99,9 +100,11 @@
             font-weight: 600;
             cursor: pointer;
             flex: 1;
+            min-width: 100px;
         }
         .btn-success { background: #2e7d32; }
         .btn-danger { background: #c62828; }
+        .btn-camera { background: #ff9800; }
         .submit-btn {
             width: 100%;
             background: #2e7d32;
@@ -139,14 +142,21 @@
         .stat-label { font-size: 10px; }
         
         /* Kelas Stats */
+        .kelas-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
         .kelas-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 10px;
             border-bottom: 1px solid #eee;
         }
         .kelas-name { font-weight: 700; width: 45px; }
-        .kelas-counts { display: flex; gap: 12px; font-size: 12px; }
+        .kelas-counts { display: flex; gap: 12px; font-size: 12px; flex-wrap: wrap; }
+        .kelas-counts span { display: inline-flex; align-items: center; gap: 3px; }
+        
         .file-info { font-size: 11px; color: #888; margin-top: 5px; }
         .file-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .file-preview-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; position: relative; }
@@ -162,17 +172,21 @@
             height: 18px;
             font-size: 10px;
             cursor: pointer;
+            text-align: center;
+            line-height: 18px;
         }
         hr { margin: 16px 0; border: none; border-top: 1px solid #eee; }
         .required { color: red; margin-left: 3px; }
         .warning { color: red; font-size: 12px; margin-top: 5px; display: none; }
+        .camera-select-group { margin-bottom: 12px; text-align: left; }
+        .camera-select-group select { width: 100%; padding: 8px; border-radius: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <img class="logo-img" id="logoImg" alt="Logo" src="logo.png" onerror="this.src='https://via.placeholder.com/70?text=LOGO'">
+            <img class="logo-img" id="logoImg" alt="Logo" src="logo.png" onerror="this.src='https://via.placeholder.com/70?text=SMPN2'">
             <div class="school-info">
                 <h1>SMPN 2 KAWALI</h1>
                 <p>Sistem Presensi Daring & Upload Tugas</p>
@@ -210,6 +224,15 @@
                     <option value="Izin">📝 Izin</option>
                     <option value="Sakit">🤒 Sakit</option>
                     <option value="Upload Tugas">📤 Upload Tugas</option>
+                </select>
+            </div>
+
+            <!-- Pilihan Kamera Depan/Belakang -->
+            <div id="cameraSelectGroup" class="camera-select-group" style="display:none;">
+                <label><i class="fas fa-camera-retro"></i> Pilih Kamera</label>
+                <select id="cameraSelect">
+                    <option value="user">📱 Kamera Depan</option>
+                    <option value="environment">📷 Kamera Belakang</option>
                 </select>
             </div>
 
@@ -255,7 +278,7 @@
             </div>
             <hr>
             <div class="card-title">📊 Statistik Per Kelas</div>
-            <div id="kelasStats"></div>
+            <div id="kelasStats" class="kelas-list"></div>
         </div>
     </div>
 
@@ -267,6 +290,7 @@
         let capturedPhoto = null;
         let currentLocation = null;
         let selectedFiles = [];
+        let currentFacing = 'user';
 
         // ==================== TAMPILAN WAKTU ====================
         function updateDateTime() {
@@ -281,24 +305,54 @@
 
         // ==================== LOGO ====================
         const logo = document.getElementById('logoImg');
-        logo.src = 'https://drive.google.com/uc?export=view&id=1nlVZtT1OQJKcX61ylMOkufbIE9x2MK6k';
-        logo.onerror = function() { this.src = 'https://via.placeholder.com/70?text=LOGO'; };
+        logo.src = 'logo.png';
+        logo.onerror = function() { 
+            console.log('Logo tidak ditemukan, menggunakan placeholder');
+            this.src = 'https://via.placeholder.com/70?text=SMPN2';
+        };
 
         // ==================== KAMERA ====================
         async function startCamera() {
             try {
-                if (currentStream) currentStream.getTracks().forEach(t => t.stop());
-                currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                document.getElementById('video').srcObject = currentStream;
+                if (currentStream) {
+                    currentStream.getTracks().forEach(t => t.stop());
+                }
+                
+                const constraints = {
+                    video: { facingMode: { exact: currentFacing } }
+                };
+                
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('video');
+                video.srcObject = currentStream;
+                video.setAttribute('playsinline', true);
                 document.getElementById('cameraWarning').style.display = 'none';
             } catch(e) {
-                document.querySelector('.video-wrapper').innerHTML = '<div style="padding:20px;color:red;">⚠️ Izin kamera ditolak</div>';
+                // Fallback ke kamera default
+                try {
+                    currentStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    document.getElementById('video').srcObject = currentStream;
+                } catch(err) {
+                    document.querySelector('.video-wrapper').innerHTML = '<div style="padding:20px;color:red;">⚠️ Izin kamera ditolak</div>';
+                }
             }
         }
+
+        // Ganti kamera
+        document.getElementById('cameraSelect').addEventListener('change', function() {
+            currentFacing = this.value;
+            startCamera();
+        });
 
         document.getElementById('captureBtn').onclick = function() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
+            
+            if (!video.videoWidth || video.videoWidth === 0) {
+                alert('Kamera belum siap. Tunggu sebentar.');
+                return;
+            }
+            
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
@@ -384,34 +438,47 @@
             const val = this.value;
             const cameraBox = document.getElementById('cameraBox');
             const uploadBox = document.getElementById('uploadBox');
+            const cameraSelectGroup = document.getElementById('cameraSelectGroup');
+            
             if (val === 'Upload Tugas') {
                 cameraBox.style.display = 'none';
+                cameraSelectGroup.style.display = 'none';
                 uploadBox.style.display = 'block';
                 if (currentStream) currentStream.getTracks().forEach(t => t.stop());
             } else if (val === 'Absen Masuk' || val === 'Absen Pulang' || val === 'Izin' || val === 'Sakit') {
                 cameraBox.style.display = 'block';
+                cameraSelectGroup.style.display = 'block';
                 uploadBox.style.display = 'none';
                 startCamera();
             } else {
                 cameraBox.style.display = 'block';
+                cameraSelectGroup.style.display = 'none';
                 uploadBox.style.display = 'none';
             }
         };
 
-        // ==================== LOAD STATISTIK ====================
+        // ==================== STATISTIK (LocalStorage) ====================
         function loadStats() {
             const today = new Date().toLocaleDateString('id-ID');
-            let stats = JSON.parse(localStorage.getItem('presensi_' + today)) || {
-                total: { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                kelas: {
-                    '7a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '7b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '7c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '8a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '8b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '8c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 }
-                }
-            };
+            let stats = localStorage.getItem('presensi_' + today);
+            
+            if (!stats) {
+                // Inisialisasi data awal jika belum ada
+                stats = {
+                    total: { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    kelas: {
+                        '7a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '7b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '7c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '8a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '8b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '8c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 }
+                    }
+                };
+                localStorage.setItem('presensi_' + today, JSON.stringify(stats));
+            } else {
+                stats = JSON.parse(stats);
+            }
             
             // Update total
             document.getElementById('totalMasuk').innerText = stats.total.masuk;
@@ -444,17 +511,21 @@
         
         function updateStats(kelas, aktivitas) {
             const today = new Date().toLocaleDateString('id-ID');
-            let stats = JSON.parse(localStorage.getItem('presensi_' + today)) || {
-                total: { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                kelas: {
-                    '7a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '7b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '7c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '8a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '8b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
-                    '8c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 }
-                }
-            };
+            let stats = JSON.parse(localStorage.getItem('presensi_' + today));
+            
+            if (!stats) {
+                stats = {
+                    total: { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                    kelas: {
+                        '7a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '7b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '7c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '8a': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '8b': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 },
+                        '8c': { masuk: 0, pulang: 0, izin: 0, sakit: 0, tugas: 0 }
+                    }
+                };
+            }
             
             let key = '';
             if (aktivitas === 'Absen Masuk') key = 'masuk';
@@ -465,13 +536,16 @@
             
             if (key) {
                 stats.total[key]++;
-                if (stats.kelas[kelas]) stats.kelas[kelas][key]++;
+                if (stats.kelas[kelas]) {
+                    stats.kelas[kelas][key]++;
+                }
             }
             
             localStorage.setItem('presensi_' + today, JSON.stringify(stats));
             loadStats();
         }
         
+        // Load statistik saat halaman dimuat
         loadStats();
 
         // ==================== SUBMIT ====================
@@ -480,12 +554,12 @@
             const kelas = document.getElementById('kelas').value;
             const aktivitas = document.getElementById('aktivitas').value;
             
-            // Validasi
+            // Validasi semua field
             if (!nama) { alert('❌ Nama lengkap wajib diisi!'); return; }
             if (!kelas) { alert('❌ Kelas wajib dipilih!'); return; }
             if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
             
-            // Validasi foto untuk aktivitas yang membutuhkan
+            // Validasi foto
             const needPhoto = ['Absen Masuk', 'Absen Pulang', 'Izin', 'Sakit'];
             if (needPhoto.includes(aktivitas) && !capturedPhoto) {
                 document.getElementById('cameraWarning').style.display = 'block';
@@ -517,9 +591,20 @@
                     }
                 }
                 
-                const data = { nama, kelas, aktivitas, fotoData: capturedPhoto, tugasData, lokasi: currentLocation || {} };
+                const data = { 
+                    nama, kelas, aktivitas, 
+                    fotoData: capturedPhoto, 
+                    tugasData, 
+                    lokasi: currentLocation || {},
+                    timestamp: new Date().toISOString()
+                };
                 
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
+                await fetch(API_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(data), 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
                 
                 // Update statistik lokal
                 updateStats(kelas, aktivitas);
@@ -536,10 +621,11 @@
                 if (capturedPhoto) document.getElementById('retakeBtn').click();
                 getLocation();
                 
-            } catch(e) { alert('❌ Gagal: ' + e.message); }
-            finally {
+            } catch(e) { 
+                alert('❌ Gagal: ' + e.message); 
+            } finally {
                 btn.disabled = false;
-                btn.innerHTML = '📤 KIRIM SEKARANG';
+                btn.innerHTML = '📤 KIRIM SEKANG';
             }
         };
         
