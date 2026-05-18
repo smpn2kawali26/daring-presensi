@@ -16,7 +16,6 @@
         }
         .container { max-width: 500px; margin: 0 auto; }
         
-        /* Header */
         .header {
             background: white;
             border-radius: 20px;
@@ -42,7 +41,6 @@
         .date { font-size: 14px; color: #555; }
         .time { font-size: 28px; font-weight: bold; color: #1e3c72; }
         
-        /* Card */
         .card {
             background: white;
             border-radius: 20px;
@@ -56,7 +54,6 @@
             color: #1e3c72;
         }
         
-        /* Form */
         .form-group { margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
         input, select {
@@ -68,7 +65,6 @@
         }
         input:focus, select:focus { border-color: #1e3c72; outline: none; }
         
-        /* Camera */
         .camera-box {
             background: #f5f5f5;
             border-radius: 16px;
@@ -90,7 +86,6 @@
         canvas { display: none; }
         .preview-img { width: 100%; max-width: 180px; border-radius: 12px; margin-top: 10px; }
         
-        /* Buttons */
         .btn-group { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
         button {
             background: #1e3c72;
@@ -113,7 +108,6 @@
             margin-top: 8px;
         }
         
-        /* Status */
         .gps-status {
             padding: 12px;
             border-radius: 12px;
@@ -124,7 +118,6 @@
         }
         .gps-error { background: #ffebee; color: #c62828; }
         
-        /* Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -141,7 +134,6 @@
         .stat-number { font-size: 20px; font-weight: bold; }
         .stat-label { font-size: 10px; }
         
-        /* Kelas Stats */
         .kelas-list {
             max-height: 350px;
             overflow-y: auto;
@@ -186,13 +178,19 @@
         .camera-select-group select { width: 100%; padding: 8px; border-radius: 8px; }
         .loading-stats { text-align: center; padding: 20px; color: #888; }
         .mapel-group { display: none; }
-        .mapel-group label { font-weight: 600; }
-        .mapel-group select { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; }
+        .jam-status {
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 6px;
+            border-radius: 8px;
+        }
+        .jam-status.open { background: #c6f6d5; color: #22543d; }
+        .jam-status.closed { background: #fed7d7; color: #742a2a; }
+        .jam-status.warning { background: #feebc8; color: #7b341e; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <img class="logo-img" id="logoImg" alt="Logo" src="logo.png" onerror="this.src='https://via.placeholder.com/70?text=SMPN2'">
             <div class="school-info">
@@ -202,10 +200,10 @@
             <div class="datetime">
                 <div class="date" id="date"></div>
                 <div class="time" id="time"></div>
+                <div id="jamStatus" class="jam-status"></div>
             </div>
         </div>
 
-        <!-- Form -->
         <div class="card">
             <div class="card-title"><i class="fas fa-edit"></i> Form Presensi</div>
             
@@ -227,15 +225,14 @@
                 <label>Aktivitas <span class="required">*</span></label>
                 <select id="aktivitas">
                     <option value="">Pilih Aktivitas</option>
-                    <option value="Absen Masuk">✅ Absen Masuk</option>
-                    <option value="Absen Pulang">🏠 Absen Pulang</option>
-                    <option value="Izin">📝 Izin</option>
-                    <option value="Sakit">🤒 Sakit</option>
-                    <option value="Upload Tugas">📤 Upload Tugas</option>
+                    <option value="Absen Masuk">✅ Absen Masuk (06:00 - 08:15)</option>
+                    <option value="Absen Pulang">🏠 Absen Pulang (11:00 - 14:00)</option>
+                    <option value="Izin">📝 Izin (06:00 - 08:00)</option>
+                    <option value="Sakit">🤒 Sakit (06:00 - 08:00)</option>
+                    <option value="Upload Tugas">📤 Upload Tugas (07:00 - 15:00)</option>
                 </select>
             </div>
 
-            <!-- Mata Pelajaran (khusus Upload Tugas) -->
             <div class="form-group mapel-group" id="mapelGroup">
                 <label>Mata Pelajaran <span class="required">*</span></label>
                 <select id="mapel">
@@ -255,7 +252,6 @@
                 </select>
             </div>
 
-            <!-- Pilihan Kamera Depan/Belakang -->
             <div id="cameraSelectGroup" class="camera-select-group">
                 <label><i class="fas fa-camera-retro"></i> Pilih Kamera</label>
                 <select id="cameraSelect">
@@ -264,7 +260,6 @@
                 </select>
             </div>
 
-            <!-- Camera Section -->
             <div class="camera-box" id="cameraBox">
                 <label>📸 Scan Wajah <span class="required">*</span></label>
                 <div class="video-wrapper">
@@ -279,7 +274,6 @@
                 <div id="cameraWarning" class="warning">⚠️ Foto wajah wajib diambil!</div>
             </div>
 
-            <!-- Upload Tugas -->
             <div class="form-group" id="uploadBox" style="display:none;">
                 <label>📎 Upload Tugas (Max 5 foto) <span class="required">*</span></label>
                 <input type="file" id="fileTugas" accept="image/*" multiple>
@@ -288,13 +282,11 @@
                 <div id="fileWarning" class="warning">⚠️ Minimal upload 1 file!</div>
             </div>
 
-            <!-- GPS -->
             <div id="gpsStatus" class="gps-status">📍 Mengambil lokasi...</div>
 
             <button id="submitBtn" class="submit-btn">📤 KIRIM SEKARANG</button>
         </div>
 
-        <!-- Statistik -->
         <div class="card">
             <div class="card-title">📊 Total Absensi Hari Ini</div>
             <div class="stats-grid">
@@ -314,6 +306,7 @@
 
     <script>
         // ==================== KONFIGURASI ====================
+        // GANTI DENGAN URL APPS SCRIPT ANDA SETELAH DEPLOY
         const API_URL = 'https://script.google.com/macros/s/AKfycbxcw0J59ojWkJxQJKRgn8UmNLHee1qwyAmMCR3oU2DmveaqjHDXP8_lryRlJV0cJrljBQ/exec';
         
         let currentStream = null;
@@ -322,6 +315,88 @@
         let selectedFiles = [];
         let currentFacing = 'user';
 
+        // ==================== ATURAN JAM ABSEN ====================
+        function isActivityAllowed(aktivitas) {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const currentTime = hours * 60 + minutes;
+            
+            let startTime, endTime;
+            
+            switch(aktivitas) {
+                case 'Absen Masuk':
+                    startTime = 6 * 60;      // 06:00
+                    endTime = 8 * 60 + 15;   // 08:15
+                    break;
+                case 'Absen Pulang':
+                    startTime = 11 * 60;     // 11:00
+                    endTime = 14 * 60;       // 14:00
+                    break;
+                case 'Izin':
+                case 'Sakit':
+                    startTime = 6 * 60;      // 06:00
+                    endTime = 8 * 60;        // 08:00
+                    break;
+                case 'Upload Tugas':
+                    startTime = 7 * 60;      // 07:00
+                    endTime = 15 * 60;       // 15:00
+                    break;
+                default:
+                    return false;
+            }
+            
+            return currentTime >= startTime && currentTime <= endTime;
+        }
+
+        function getTimeRemaining(aktivitas) {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const currentTime = hours * 60 + minutes;
+            
+            let endTime;
+            switch(aktivitas) {
+                case 'Absen Masuk': endTime = 8 * 60 + 15; break;
+                case 'Absen Pulang': endTime = 14 * 60; break;
+                case 'Izin':
+                case 'Sakit': endTime = 8 * 60; break;
+                case 'Upload Tugas': endTime = 15 * 60; break;
+                default: return 0;
+            }
+            
+            const remaining = endTime - currentTime;
+            if (remaining <= 0) return 0;
+            
+            const hoursRemaining = Math.floor(remaining / 60);
+            const minutesRemaining = remaining % 60;
+            
+            if (hoursRemaining > 0) {
+                return `${hoursRemaining} jam ${minutesRemaining} menit`;
+            }
+            return `${minutesRemaining} menit`;
+        }
+
+        function updateJamStatus() {
+            const aktivitas = document.getElementById('aktivitas').value;
+            const statusDiv = document.getElementById('jamStatus');
+            
+            if (!aktivitas || aktivitas === '') {
+                statusDiv.innerHTML = '📅 Pilih aktivitas terlebih dahulu';
+                statusDiv.className = 'jam-status warning';
+                return;
+            }
+            
+            if (isActivityAllowed(aktivitas)) {
+                const remaining = getTimeRemaining(aktivitas);
+                statusDiv.innerHTML = `✅ Waktu tersedia: ${remaining} lagi`;
+                statusDiv.className = 'jam-status open';
+            } else {
+                statusDiv.innerHTML = `⛔ Waktu untuk ${aktivitas} sudah habis!`;
+                statusDiv.className = 'jam-status closed';
+            }
+        }
+
         // ==================== TAMPILAN WAKTU ====================
         function updateDateTime() {
             const now = new Date();
@@ -329,6 +404,7 @@
             const waktu = now.toLocaleTimeString('id-ID');
             document.getElementById('date').innerHTML = hari;
             document.getElementById('time').innerHTML = waktu;
+            updateJamStatus();
         }
         updateDateTime();
         setInterval(updateDateTime, 1000);
@@ -340,7 +416,7 @@
             this.src = 'https://via.placeholder.com/70?text=SMPN2';
         };
 
-        // ==================== LOAD STATISTIK DARI GOOGLE SHEET ====================
+        // ==================== LOAD STATISTIK ====================
         async function loadStatsFromSheet() {
             const container = document.getElementById('kelasStats');
             container.innerHTML = '<div class="loading-stats"><i class="fas fa-spinner fa-spin"></i> Memuat statistik...</div>';
@@ -515,7 +591,7 @@
         }
         getLocation();
 
-        // ==================== TOGGLE FORM BERDASARKAN AKTIVITAS ====================
+        // ==================== TOGGLE FORM ====================
         document.getElementById('aktivitas').onchange = function() {
             const val = this.value;
             const cameraBox = document.getElementById('cameraBox');
@@ -523,30 +599,25 @@
             const uploadBox = document.getElementById('uploadBox');
             const mapelGroup = document.getElementById('mapelGroup');
             
-            // Sembunyikan semua dulu
             cameraBox.style.display = 'none';
             cameraSelectGroup.style.display = 'none';
             uploadBox.style.display = 'none';
             mapelGroup.style.display = 'none';
             
-            // Hentikan kamera jika sedang berjalan
             if (currentStream) {
                 currentStream.getTracks().forEach(t => t.stop());
             }
             
             if (val === 'Upload Tugas') {
-                // Tampilkan upload tugas dan mata pelajaran
                 uploadBox.style.display = 'block';
                 mapelGroup.style.display = 'block';
-                document.getElementById('cameraWarning').style.display = 'none';
-                document.getElementById('fileWarning').style.display = 'none';
             } else if (val === 'Absen Masuk' || val === 'Absen Pulang' || val === 'Izin' || val === 'Sakit') {
-                // Tampilkan kamera
                 cameraBox.style.display = 'block';
                 cameraSelectGroup.style.display = 'block';
                 startCamera();
             }
-            // Jika val kosong, semua tetap tersembunyi
+            
+            updateJamStatus();
         };
 
         // ==================== SUBMIT ====================
@@ -556,12 +627,16 @@
             const aktivitas = document.getElementById('aktivitas').value;
             const mapel = document.getElementById('mapel').value;
             
-            // Validasi
             if (!nama) { alert('❌ Nama lengkap wajib diisi!'); return; }
             if (!kelas) { alert('❌ Kelas wajib dipilih!'); return; }
             if (!aktivitas) { alert('❌ Aktivitas wajib dipilih!'); return; }
             
-            // Validasi mata pelajaran untuk upload tugas
+            // Cek waktu
+            if (!isActivityAllowed(aktivitas)) {
+                alert(`⛔ Maaf, waktu untuk ${aktivitas} sudah habis!`);
+                return;
+            }
+            
             if (aktivitas === 'Upload Tugas' && !mapel) {
                 alert('❌ Mata pelajaran wajib dipilih!');
                 return;
@@ -614,7 +689,6 @@
                 
                 alert('✅ Data berhasil dikirim!');
                 
-                // Reset form
                 document.getElementById('nama').value = '';
                 document.getElementById('kelas').value = '';
                 document.getElementById('aktivitas').value = '';
@@ -627,7 +701,6 @@
                     document.getElementById('retakeBtn').click();
                 }
                 
-                // Sembunyikan komponen
                 document.getElementById('cameraBox').style.display = 'none';
                 document.getElementById('cameraSelectGroup').style.display = 'none';
                 document.getElementById('uploadBox').style.display = 'none';
@@ -643,8 +716,6 @@
                 btn.innerHTML = '📤 KIRIM SEKARANG';
             }
         };
-        
-        // Inisialisasi: tidak perlu start camera otomatis
     </script>
 </body>
 </html>
